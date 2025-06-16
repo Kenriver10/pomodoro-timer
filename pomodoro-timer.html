@@ -1,0 +1,3234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ポモドーロタイマー</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #a8e6cf 0%, #dcedc1 50%, #ffd3a5 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #2c3e50;
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            justify-content: center;
+            width: 100%;
+            max-width: 1400px;
+            height: 100%;
+            max-height: calc(100vh - 30px);
+            flex-wrap: wrap;
+        }
+
+        .timer-container-wrapper {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            flex-shrink: 0;
+            width: 350px;
+            height: fit-content;
+        }
+
+        .task-container {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            width: 350px;
+            height: 100%;
+            max-height: calc(100vh - 30px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .checklist-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .stats-container {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            width: 320px;
+            height: 100%;
+            max-height: calc(100vh - 30px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        h1 {
+            margin-bottom: 15px;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .timer-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 12px 0;
+            font-family: 'Arial', sans-serif;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: rgba(139, 195, 74, 0.8);
+            border: 2px solid rgba(139, 195, 74, 0.6);
+            color: #2c3e50;
+            padding: 10px 18px;
+            margin: 0;
+            border-radius: 50px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            font-weight: 600;
+            min-width: 80px;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background: rgba(139, 195, 74, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* メイン制御ボタンのスタイル */
+        .controls button {
+            flex: 1;
+            max-width: 90px;
+        }
+
+        #startBtn {
+            background: rgba(46, 204, 113, 0.8);
+            border-color: rgba(46, 204, 113, 0.6);
+        }
+
+        #startBtn:hover {
+            background: rgba(46, 204, 113, 0.9);
+        }
+
+        #pauseBtn {
+            background: rgba(243, 156, 18, 0.8);
+            border-color: rgba(243, 156, 18, 0.6);
+        }
+
+        #pauseBtn:hover {
+            background: rgba(243, 156, 18, 0.9);
+        }
+
+        #resetBtn {
+            background: rgba(231, 76, 60, 0.8);
+            border-color: rgba(231, 76, 60, 0.6);
+        }
+
+        #resetBtn:hover {
+            background: rgba(231, 76, 60, 0.9);
+        }
+
+        .status {
+            font-size: 1.1em;
+            margin: 15px 0;
+            opacity: 0.8;
+        }
+
+        .encouragement {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 183, 77, 0.95);
+            color: #2c3e50;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: all 0.5s ease;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 1000;
+        }
+
+        .encouragement.show {
+            opacity: 1;
+            top: -50px;
+        }
+
+        .timer-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .mode-indicator {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .work-mode {
+            color: #e74c3c;
+        }
+
+        .break-mode {
+            color: #16a085;
+        }
+
+        .completion-controls {
+            margin: 15px 0;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .completion-controls.show {
+            display: flex;
+        }
+
+        .timer-settings {
+            margin: 8px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .timer-settings h3 {
+            margin: 0 0 8px 0;
+            font-size: 1em;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .duration-control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 12px 0;
+        }
+
+        .duration-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        .duration-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            padding: 4px 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .duration-display {
+            background: transparent;
+            border: none;
+            padding: 6px 12px;
+            min-width: 50px;
+            text-align: center;
+            font-family: 'Arial', sans-serif;
+            font-size: 1em;
+            color: #2c3e50;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .duration-btn {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            border: 1px solid rgba(139, 195, 74, 0.4);
+            color: #2c3e50;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .duration-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(139, 195, 74, 0.1), rgba(139, 195, 74, 0.2));
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            border-radius: 7px;
+        }
+
+        .duration-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            border-color: rgba(139, 195, 74, 0.6);
+        }
+
+        .duration-btn:hover::before {
+            opacity: 1;
+        }
+
+        .duration-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .duration-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(139, 195, 74, 0.3);
+        }
+
+        .checklist-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .checklist-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .current-date {
+            font-size: 1em;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+
+        .task-input-container {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .task-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 18px;
+            padding: 8px 14px;
+            color: #2c3e50;
+            font-size: 1em;
+            outline: none;
+            height: 35px;
+            box-sizing: border-box;
+        }
+
+        .task-input::placeholder {
+            color: rgba(44, 62, 80, 0.6);
+        }
+
+        .task-input:focus {
+            border-color: rgba(139, 195, 74, 0.8);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .add-task-btn {
+            background: linear-gradient(135deg, rgba(139, 195, 74, 0.9), rgba(139, 195, 74, 0.7));
+            border: 1px solid rgba(139, 195, 74, 0.6);
+            border-radius: 10px;
+            width: 35px;
+            height: 35px;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .add-task-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            border-radius: 11px;
+        }
+
+        .add-task-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, rgba(139, 195, 74, 1), rgba(139, 195, 74, 0.8));
+        }
+
+        .add-task-btn:hover::before {
+            opacity: 1;
+        }
+
+        .add-task-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 15px;
+            margin-bottom: 10px;
+            padding: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .task-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-item.dragging {
+            cursor: grabbing;
+        }
+
+        .task-item:active {
+            cursor: grabbing;
+        }
+
+        .task-item.dragging {
+            opacity: 0.5;
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+
+        .task-item.drag-over {
+            border-top: 3px solid #4ecdc4;
+        }
+
+        .drag-handle {
+            color: rgba(44, 62, 80, 0.4);
+            margin-right: 10px;
+            font-size: 1.2em;
+            cursor: grab;
+        }
+
+        .drag-handle:hover {
+            color: rgba(44, 62, 80, 0.7);
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .task-progress-indicator {
+            font-size: 0.8em;
+            color: #16a085;
+            margin-left: 5px;
+            opacity: 0.8;
+            font-weight: 600;
+        }
+
+        .task-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .task-item.completed {
+            background: rgba(255, 255, 255, 0.3);
+            opacity: 0.7;
+            text-decoration: line-through;
+        }
+
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid rgba(139, 195, 74, 0.6);
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .task-checkbox.checked {
+            background: #16a085;
+            border-color: #16a085;
+        }
+
+        .task-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .task-text {
+            flex: 1;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .task-delete {
+            background: none;
+            border: none;
+            color: rgba(44, 62, 80, 0.5);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+
+        .task-delete:hover {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+        }
+
+        .date-separator {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 0.9em;
+            opacity: 0.7;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding-top: 15px;
+        }
+
+        .stats-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .stats-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 12px;
+            padding: 10px 8px;
+            text-align: center;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 60px;
+        }
+
+        .stat-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 1.4em;
+            font-weight: bold;
+            font-family: 'Arial', sans-serif;
+            color: #16a085;
+            display: block;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .stat-label {
+            font-size: 0.75em;
+            opacity: 0.8;
+            font-weight: 500;
+            line-height: 1.2;
+            margin: 0;
+        }
+
+        .progress-section {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .progress-title {
+            font-size: 1em;
+            margin-bottom: 10px;
+            text-align: center;
+            font-weight: 600;
+            color: #2c3e50;
+            opacity: 0.9;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #16a085, #139a73);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: bold;
+            color: white;
+        }
+
+        .weekly-chart {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            height: 40px;
+            margin-top: 8px;
+            padding: 0 2px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 5px;
+        }
+
+        .day-bar {
+            background: rgba(255, 255, 255, 0.6);
+            width: 12%;
+            min-height: 4px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            position: relative;
+            margin: 0 1px;
+        }
+
+        .day-bar.active {
+            background: linear-gradient(180deg, #16a085, #139a73);
+            box-shadow: 0 2px 4px rgba(22, 160, 133, 0.3);
+        }
+
+        .day-label {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65em;
+            opacity: 0.7;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .task-dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .task-dialog-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .task-dialog {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            color: #2c3e50;
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+        }
+
+        .task-dialog-overlay.show .task-dialog {
+            transform: scale(1);
+        }
+
+        .task-dialog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(44, 62, 80, 0.2);
+        }
+
+        .task-dialog-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            word-wrap: break-word;
+            flex: 1;
+            margin-right: 15px;
+        }
+
+        .task-dialog-close {
+            background: none;
+            border: none;
+            color: rgba(44, 62, 80, 0.7);
+            font-size: 1.8em;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .task-dialog-close:hover {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+        }
+
+        .subtask-input-container {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .subtask-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 18px;
+            padding: 8px 14px;
+            color: #2c3e50;
+            font-size: 1em;
+            outline: none;
+            height: 35px;
+            box-sizing: border-box;
+        }
+
+        .subtask-input::placeholder {
+            color: rgba(44, 62, 80, 0.6);
+        }
+
+        .subtask-input:focus {
+            border-color: rgba(139, 195, 74, 0.8);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .add-subtask-btn {
+            background: linear-gradient(135deg, rgba(139, 195, 74, 0.9), rgba(139, 195, 74, 0.7));
+            border: 1px solid rgba(139, 195, 74, 0.6);
+            border-radius: 10px;
+            width: 35px;
+            height: 35px;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .add-subtask-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            border-radius: 11px;
+        }
+
+        .add-subtask-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, rgba(139, 195, 74, 1), rgba(139, 195, 74, 0.8));
+        }
+
+        .add-subtask-btn:hover::before {
+            opacity: 1;
+        }
+
+        .add-subtask-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtask-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .subtask-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .subtask-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .subtask-item.completed {
+            background: rgba(255, 255, 255, 0.4);
+            opacity: 0.7;
+            text-decoration: line-through;
+        }
+
+        .subtask-checkbox {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid rgba(139, 195, 74, 0.6);
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .subtask-checkbox.checked {
+            background: #16a085;
+            border-color: #16a085;
+        }
+
+        .subtask-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .subtask-text {
+            flex: 1;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .subtask-delete {
+            background: none;
+            border: none;
+            color: rgba(44, 62, 80, 0.5);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+
+        .subtask-delete:hover {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.2);
+        }
+
+        .subtask-progress {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(44, 62, 80, 0.2);
+            text-align: center;
+            font-size: 0.9em;
+            opacity: 0.8;
+            font-weight: 600;
+            color: #16a085;
+        }
+
+        .calendar-section {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .calendar-title {
+            font-size: 1em;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            opacity: 0.9;
+        }
+
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .calendar-nav-btn {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            border: 1px solid rgba(139, 195, 74, 0.4);
+            color: #2c3e50;
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .calendar-nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(139, 195, 74, 0.1), rgba(139, 195, 74, 0.2));
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            border-radius: 9px;
+        }
+
+        .calendar-nav-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            border-color: rgba(139, 195, 74, 0.6);
+        }
+
+        .calendar-nav-btn:hover::before {
+            opacity: 1;
+        }
+
+        .calendar-nav-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-month {
+            font-size: 1em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .calendar-day:hover {
+            background: rgba(139, 195, 74, 0.4);
+            transform: scale(1.05);
+        }
+
+        .calendar-day.today {
+            background: rgba(139, 195, 74, 0.8);
+            color: white;
+            font-weight: bold;
+        }
+
+        .calendar-day.has-tasks {
+            background: rgba(16, 160, 133, 0.6);
+            color: white;
+        }
+
+        .calendar-day.has-tasks:hover {
+            background: rgba(16, 160, 133, 0.8);
+        }
+
+        .calendar-day.other-month {
+            color: rgba(44, 62, 80, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .calendar-day.other-month:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .calendar-day-header {
+            font-size: 0.7em;
+            font-weight: bold;
+            color: rgba(44, 62, 80, 0.6);
+            background: none;
+            cursor: default;
+        }
+
+        .calendar-day-header:hover {
+            background: none;
+            transform: none;
+        }
+
+        .past-tasks-dialog {
+            max-width: 600px;
+        }
+
+        .past-tasks-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .past-task-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .past-task-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .past-task-item.completed {
+            background: rgba(255, 255, 255, 0.4);
+            opacity: 0.7;
+        }
+
+        .past-task-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid rgba(139, 195, 74, 0.6);
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .past-task-status.completed {
+            background: #16a085;
+            border-color: #16a085;
+        }
+
+        .past-task-status.completed::after {
+            content: '✓';
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .past-task-text {
+            flex: 1;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .past-task-text.completed {
+            text-decoration: line-through;
+        }
+
+        .copy-task-btn {
+            background: rgba(139, 195, 74, 0.8);
+            border: 1px solid rgba(139, 195, 74, 0.6);
+            border-radius: 8px;
+            color: #2c3e50;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 6px 12px;
+            margin-left: 10px;
+            font-weight: 600;
+        }
+
+        .copy-task-btn:hover {
+            background: rgba(139, 195, 74, 0.9);
+            transform: translateY(-1px);
+        }
+
+        .copy-task-btn:active {
+            transform: translateY(0);
+        }
+
+        .past-tasks-empty {
+            text-align: center;
+            opacity: 0.6;
+            margin: 40px 0;
+            font-style: italic;
+        }
+
+        .fullscreen-timer-dialog {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            color: #2c3e50;
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+
+        .task-dialog-overlay.show .fullscreen-timer-dialog {
+            transform: scale(1);
+        }
+
+        .fullscreen-timer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .fullscreen-mode-indicator {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .fullscreen-mode-indicator.work-mode {
+            color: #e74c3c;
+        }
+
+        .fullscreen-mode-indicator.break-mode {
+            color: #16a085;
+        }
+
+        .fullscreen-timer-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        .fullscreen-timer-display {
+            font-size: 4.5em;
+            font-weight: bold;
+            font-family: 'Arial', sans-serif;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .fullscreen-progress-svg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-90deg);
+        }
+
+        .fullscreen-progress-ring-background {
+            stroke: rgba(44, 62, 80, 0.1);
+            stroke-width: 8;
+            fill: transparent;
+            r: 110;
+            cx: 125;
+            cy: 125;
+        }
+
+        .fullscreen-progress-ring-circle {
+            stroke: rgba(139, 195, 74, 0.6);
+            stroke-width: 6;
+            fill: transparent;
+            r: 110;
+            cx: 125;
+            cy: 125;
+            stroke-dasharray: 691.15;
+            stroke-dashoffset: 691.15;
+            transition: stroke-dashoffset 1s linear;
+            stroke-linecap: round;
+        }
+
+        .fullscreen-progress-ring-active {
+            stroke: #16a085;
+            stroke-width: 6;
+            animation: fullscreen-pulse 2s ease-in-out infinite;
+        }
+
+        .fullscreen-progress-ring-complete {
+            animation: fullscreen-complete-flash 0.8s ease-out;
+        }
+
+        @keyframes fullscreen-pulse {
+            0% { stroke-width: 6; opacity: 1; }
+            50% { stroke-width: 7; opacity: 0.8; }
+            100% { stroke-width: 6; opacity: 1; }
+        }
+
+        @keyframes fullscreen-complete-flash {
+            0%, 100% { stroke: #16a085; stroke-width: 6; }
+            25% { stroke: #f39c12; stroke-width: 8; }
+            50% { stroke: #e74c3c; stroke-width: 10; }
+            75% { stroke: #f39c12; stroke-width: 8; }
+        }
+
+        .fullscreen-status {
+            font-size: 1.5em;
+            opacity: 0.8;
+            margin: 15px 0;
+        }
+
+        .fullscreen-encouragement {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 12px 20px;
+            margin: 15px 0;
+            color: #2c3e50;
+            font-size: 1.2em;
+            font-weight: 600;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s ease;
+            border: 1px solid rgba(139, 195, 74, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .fullscreen-encouragement.show {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1.02);
+        }
+
+        .fullscreen-completion-controls {
+            margin: 20px 0;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .fullscreen-completion-controls.show {
+            display: flex;
+        }
+
+        .fullscreen-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 25px 0;
+        }
+
+        .fullscreen-controls button,
+        .fullscreen-completion-controls button {
+            min-width: 110px;
+            padding: 12px 20px;
+            font-size: 1em;
+        }
+
+        .fullscreen-button-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .fullscreen-btn {
+            background: rgba(52, 152, 219, 0.8);
+            border-color: rgba(52, 152, 219, 0.6);
+            color: white;
+            min-width: 160px;
+            padding: 10px 20px;
+            font-size: 0.9em;
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(52, 152, 219, 0.9);
+        }
+
+        @media (max-width: 1400px) {
+            .main-container {
+                max-width: 1200px;
+                gap: 12px;
+            }
+
+            .timer-container-wrapper,
+            .task-container,
+            .stats-container {
+                width: 320px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .main-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+                max-height: none;
+            }
+
+            .timer-container-wrapper,
+            .task-container,
+            .stats-container {
+                width: 100%;
+                max-width: 600px;
+                height: auto;
+                max-height: none;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 6px;
+            }
+
+            .stat-item {
+                min-height: 50px;
+                padding: 8px 4px;
+            }
+
+            .stat-number {
+                font-size: 1.2em;
+            }
+
+            .stat-label {
+                font-size: 0.7em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+                align-items: flex-start;
+                padding-top: 20px;
+            }
+
+            .main-container {
+                gap: 12px;
+                width: 100%;
+                max-width: none;
+            }
+
+            .timer-container-wrapper,
+            .task-container,
+            .stats-container {
+                max-width: none;
+                padding: 15px;
+                width: 100%;
+            }
+
+            .timer-display {
+                font-size: 2.2em;
+            }
+
+            h1 {
+                font-size: 1.6em;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .stat-item {
+                min-height: 55px;
+                padding: 10px 6px;
+            }
+
+            .stat-number {
+                font-size: 1.3em;
+            }
+
+            .stat-label {
+                font-size: 0.75em;
+            }
+
+            .calendar-grid {
+                gap: 1px;
+            }
+
+            .calendar-day {
+                font-size: 0.75em;
+            }
+
+            .duration-control {
+                margin: 10px 0;
+            }
+
+            .duration-input-group {
+                gap: 6px;
+                padding: 3px 6px;
+            }
+
+            .duration-btn {
+                width: 26px;
+                height: 26px;
+                font-size: 0.85em;
+            }
+
+            .weekly-chart {
+                height: 35px;
+            }
+
+            .day-label {
+                bottom: -16px;
+                font-size: 0.6em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+
+            .timer-container-wrapper,
+            .task-container,
+            .stats-container {
+                padding: 12px;
+            }
+
+            .timer-display {
+                font-size: 2em;
+            }
+
+            h1 {
+                font-size: 1.4em;
+                margin-bottom: 10px;
+            }
+
+            .controls {
+                margin: 15px 0;
+                gap: 10px;
+            }
+
+            button {
+                min-width: 70px;
+                padding: 8px 14px;
+                font-size: 0.85em;
+            }
+
+            .timer-settings {
+                margin: 6px 0;
+                padding: 8px;
+            }
+
+            .mode-indicator {
+                font-size: 1.1em;
+                margin-bottom: 10px;
+            }
+
+            .status {
+                font-size: 1em;
+                margin: 10px 0;
+            }
+
+            .task-input {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+
+            .add-task-btn,
+            .add-subtask-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 0.9em;
+            }
+
+            .task-item {
+                padding: 12px;
+                margin-bottom: 8px;
+            }
+
+            .stats-grid {
+                gap: 6px;
+            }
+
+            .stat-item {
+                min-height: 50px;
+                padding: 8px 4px;
+            }
+
+            .stat-number {
+                font-size: 1.1em;
+            }
+
+            .stat-label {
+                font-size: 0.7em;
+            }
+
+            .progress-section,
+            .calendar-section {
+                padding: 10px;
+                margin-top: 12px;
+            }
+
+            .calendar-nav-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 1em;
+            }
+
+            .calendar-day {
+                font-size: 0.7em;
+            }
+
+            .weekly-chart {
+                height: 30px;
+                padding: 3px;
+            }
+
+            .day-label {
+                bottom: -14px;
+                font-size: 0.55em;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .timer-display {
+                font-size: 1.8em;
+            }
+
+            .controls {
+                gap: 8px;
+            }
+
+            .controls button {
+                min-width: 65px;
+                padding: 8px 10px;
+                font-size: 0.8em;
+                max-width: 75px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 4px;
+            }
+
+            .stat-item {
+                min-height: 45px;
+                padding: 6px 3px;
+            }
+
+            .stat-number {
+                font-size: 1em;
+            }
+
+            .stat-label {
+                font-size: 0.65em;
+            }
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-background {
+            stroke: rgba(44, 62, 80, 0.1);
+            stroke-width: 6;
+            fill: transparent;
+            r: 80;
+            cx: 90;
+            cy: 90;
+        }
+
+        .progress-ring-circle {
+            stroke: rgba(139, 195, 74, 0.6);
+            stroke-width: 4;
+            fill: transparent;
+            r: 80;
+            cx: 90;
+            cy: 90;
+            stroke-dasharray: 502.65;
+            stroke-dashoffset: 502.65;
+            transition: stroke-dashoffset 1s linear;
+            stroke-linecap: round;
+        }
+
+        .progress-ring-active {
+            stroke: #16a085;
+            stroke-width: 4;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .progress-ring-complete {
+            animation: complete-flash 0.8s ease-out;
+        }
+
+        @keyframes pulse {
+            0% { stroke-width: 4; opacity: 1; }
+            50% { stroke-width: 5; opacity: 0.8; }
+            100% { stroke-width: 4; opacity: 1; }
+        }
+
+        @keyframes complete-flash {
+            0%, 100% { stroke: #16a085; stroke-width: 4; }
+            25% { stroke: #f39c12; stroke-width: 6; }
+            50% { stroke: #e74c3c; stroke-width: 8; }
+            75% { stroke: #f39c12; stroke-width: 6; }
+        }
+
+        .timer-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .progress-svg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="timer-container-wrapper">
+            <h1>🍅 ポモドーロタイマー</h1>
+            
+            <div class="timer-settings">
+                <h3>⚙️ タイマー設定</h3>
+                <div class="duration-control">
+                    <span class="duration-label">作業時間</span>
+                    <div class="duration-input-group">
+                        <button class="duration-btn" id="workDownBtn">−</button>
+                        <div class="duration-display" id="workDuration">15分</div>
+                        <button class="duration-btn" id="workUpBtn">+</button>
+                    </div>
+                </div>
+                <div class="duration-control">
+                    <span class="duration-label">休憩時間</span>
+                    <div class="duration-input-group">
+                        <button class="duration-btn" id="breakDownBtn">−</button>
+                        <div class="duration-display" id="breakDuration">5分</div>
+                        <button class="duration-btn" id="breakUpBtn">+</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mode-indicator" id="modeIndicator">🍅 作業モード</div>
+            
+            <div class="timer-container">
+                <div class="timer-display" id="timerDisplay">15:00</div>
+                <svg class="progress-svg" width="180" height="180">
+                    <circle class="progress-ring-background"></circle>
+                    <circle class="progress-ring-circle" id="progressCircle"></circle>
+                </svg>
+            </div>
+            
+            <div class="status" id="status">準備完了</div>
+            
+            <div class="completion-controls" id="completionControls">
+                <button id="startBreakBtn">休憩開始 (5分)</button>
+                <button id="skipBreakBtn">休憩をスキップ</button>
+            </div>
+            
+            <div class="controls">
+                <button id="startBtn">開始</button>
+                <button id="pauseBtn" disabled>一時停止</button>
+                <button id="resetBtn">リセット</button>
+            </div>
+            
+            <div class="fullscreen-button-container">
+                <button id="fullscreenBtn" class="fullscreen-btn">📺 フルスクリーン表示</button>
+            </div>
+        </div>
+        
+        <div class="task-container">
+            <div class="checklist-container">
+                <div class="checklist-header">
+                    <div class="checklist-title">📝 タスクリスト</div>
+                    <div class="current-date" id="currentDate"></div>
+                </div>
+                
+                <div class="task-input-container">
+                    <input type="text" class="task-input" id="taskInput" placeholder="新しいタスクを入力..." maxlength="100">
+                    <button class="add-task-btn" id="addTaskBtn">+</button>
+                </div>
+                
+                <div class="task-list" id="taskList"></div>
+            </div>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stats-header">
+                <div class="stats-title">📈 統計・進捗</div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number" id="todayPomodoros">0</span>
+                    <div class="stat-label">今日のポモ</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="completedTasks">0</span>
+                    <div class="stat-label">完了タスク</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="totalTime">0h</span>
+                    <div class="stat-label">今日の時間</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="weeklyPomodoros">0</span>
+                    <div class="stat-label">今週のポモ</div>
+                </div>
+            </div>
+            
+            <div class="progress-section">
+                <div class="progress-title">今日の目標達成度</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="dailyProgress" style="width: 0%">0%</div>
+                </div>
+            </div>
+            
+            <div class="progress-section">
+                <div class="progress-title">週間アクティビティ</div>
+                <div class="weekly-chart" id="weeklyChart">
+                    <div class="day-bar" data-day="0"><div class="day-label">日</div></div>
+                    <div class="day-bar" data-day="1"><div class="day-label">月</div></div>
+                    <div class="day-bar" data-day="2"><div class="day-label">火</div></div>
+                    <div class="day-bar" data-day="3"><div class="day-label">水</div></div>
+                    <div class="day-bar" data-day="4"><div class="day-label">木</div></div>
+                    <div class="day-bar" data-day="5"><div class="day-label">金</div></div>
+                    <div class="day-bar" data-day="6"><div class="day-label">土</div></div>
+                </div>
+            </div>
+            
+            <div class="calendar-section">
+                <div class="calendar-title">📅 カレンダー</div>
+                <div class="calendar-nav">
+                    <button class="calendar-nav-btn" id="prevMonthBtn">‹</button>
+                    <div class="calendar-month" id="calendarMonth">2024年12月</div>
+                    <button class="calendar-nav-btn" id="nextMonthBtn">›</button>
+                </div>
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- Calendar days will be generated here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Task Detail Dialog -->
+        <div class="task-dialog-overlay" id="taskDialogOverlay">
+            <div class="task-dialog">
+                <div class="task-dialog-header">
+                    <div class="task-dialog-title" id="taskDialogTitle">タスク詳細</div>
+                    <button class="task-dialog-close" id="taskDialogClose">×</button>
+                </div>
+                
+                <div class="subtask-input-container">
+                    <input type="text" class="subtask-input" id="subtaskInput" placeholder="サブタスクを入力..." maxlength="100">
+                    <button class="add-subtask-btn" id="addSubtaskBtn">+</button>
+                </div>
+                
+                <div class="subtask-list" id="subtaskList"></div>
+                
+                <div class="subtask-progress" id="subtaskProgress">
+                    完了: 0 / 0
+                </div>
+            </div>
+        </div>
+        
+        <!-- Past Tasks Dialog -->
+        <div class="task-dialog-overlay" id="pastTasksDialogOverlay">
+            <div class="task-dialog past-tasks-dialog">
+                <div class="task-dialog-header">
+                    <div class="task-dialog-title" id="pastTasksDialogTitle">過去のタスク - 2024年12月16日</div>
+                    <button class="task-dialog-close" id="pastTasksDialogClose">×</button>
+                </div>
+                
+                <div class="past-tasks-list" id="pastTasksList">
+                    <!-- Past tasks will be generated here -->
+                </div>
+                
+                <div class="past-tasks-empty" id="pastTasksEmpty" style="display: none;">
+                    この日にはタスクがありません
+                </div>
+            </div>
+        </div>
+        
+        <!-- Full Screen Timer Dialog -->
+        <div class="task-dialog-overlay" id="fullscreenTimerOverlay">
+            <div class="fullscreen-timer-dialog">
+                <div class="task-dialog-header">
+                    <div class="task-dialog-title">🍅 ポモドーロタイマー</div>
+                    <button class="task-dialog-close" id="fullscreenTimerClose">×</button>
+                </div>
+                
+                <div class="fullscreen-timer-content">
+                    <div class="fullscreen-timer-container">
+                        <div class="fullscreen-timer-display" id="fullscreenTimerDisplay">15:00</div>
+                        <svg class="fullscreen-progress-svg" width="250" height="250">
+                            <circle class="fullscreen-progress-ring-background"></circle>
+                            <circle class="fullscreen-progress-ring-circle" id="fullscreenProgressCircle"></circle>
+                        </svg>
+                    </div>
+                    
+                    <div class="fullscreen-status" id="fullscreenStatus">準備完了</div>
+                    
+                    <div class="fullscreen-encouragement" id="fullscreenEncouragement"></div>
+                    
+                    <div class="fullscreen-completion-controls" id="fullscreenCompletionControls">
+                        <button id="fullscreenStartBreakBtn">休憩開始 (5分)</button>
+                        <button id="fullscreenSkipBreakBtn">休憩をスキップ</button>
+                    </div>
+                    
+                    <div class="fullscreen-controls">
+                        <button id="fullscreenStartBtn">開始</button>
+                        <button id="fullscreenPauseBtn" disabled>一時停止</button>
+                        <button id="fullscreenResetBtn">リセット</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PomodoroTimer {
+            constructor() {
+                this.settings = this.loadSettings();
+                this.workDuration = this.settings.workDuration * 60;
+                this.breakDuration = this.settings.breakDuration * 60;
+                this.timeLeft = this.workDuration;
+                this.isRunning = false;
+                this.intervalId = null;
+                this.isBreakMode = false;
+                this.encouragementIntervalId = null;
+                this.lastEncouragementIndex = -1;
+                
+                this.encouragementMessages = {
+                    start: [
+                        'さあ、今から集中じゃの🐻‍❄️',
+                        '心はととのったかの？さあはじめようぞ🐻‍❄️',
+                        '新しいポモドーロの始まりじゃ🐻‍❄️',
+                        '今回もがんばるのじゃ🐻‍❄️',
+                        'よし、集中モードに入るのじゃ🐻‍❄️',
+                        '準備はできたかの？スタートじゃ🐻‍❄️',
+                        '今日も元気にいくのじゃ🐻‍❄️',
+                        'フレッシュな気持ちで始めるのじゃ🐻‍❄️',
+                        '気合を入れていこうかの🐻‍❄️',
+                        '新たなチャレンジの時間じゃ🐻‍❄️'
+                    ],
+                    middle: [
+                        'がんばっているの🐻‍❄️',
+                        'いい調子じゃ🐻‍❄️',
+                        'その集中力、すばらしいのう🐻‍❄️',
+                        'えらいぞ、よく続けておる🐻‍❄️',
+                        '順調に進んでおるの🐻‍❄️',
+                        'なかなかやるではないか🐻‍❄️',
+                        '集中している姿がまぶしいのう🐻‍❄️',
+                        'その調子でどんどん進めるのじゃ🐻‍❄️',
+                        'リズムに乗っておるのう🐻‍❄️',
+                        '君の努力を見ておるぞ🐻‍❄️',
+                        'きっと良い結果が出るじゃろう🐻‍❄️',
+                        '真剣な表情が素敵じゃの🐻‍❄️',
+                        '着実に前進しておるの🐻‍❄️',
+                        'この集中力を保つのじゃ🐻‍❄️'
+                    ],
+                    end: [
+                        'あとひと踏ん張りじゃ🐻‍❄️',
+                        'もうすぐゴールじゃ、がんばれ🐻‍❄️',
+                        'ラストスパートじゃのう🐻‍❄️',
+                        'あと少しで完了じゃ🐻‍❄️',
+                        '最後まで集中じゃ🐻‍❄️',
+                        'ゴールが見えてきたぞ🐻‍❄️',
+                        'ここが正念場じゃ🐻‍❄️',
+                        '最後の力を振り絞るのじゃ🐻‍❄️',
+                        'もう一息で達成じゃ🐻‍❄️',
+                        'フィニッシュまであと少しじゃ🐻‍❄️'
+                    ]
+                };
+                
+                this.timerDisplay = document.getElementById('timerDisplay');
+                this.status = document.getElementById('status');
+                this.modeIndicator = document.getElementById('modeIndicator');
+                this.startBtn = document.getElementById('startBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.progressCircle = document.getElementById('progressCircle');
+                this.completionControls = document.getElementById('completionControls');
+                this.startBreakBtn = document.getElementById('startBreakBtn');
+                this.skipBreakBtn = document.getElementById('skipBreakBtn');
+                
+                this.workDurationDisplay = document.getElementById('workDuration');
+                this.breakDurationDisplay = document.getElementById('breakDuration');
+                this.workUpBtn = document.getElementById('workUpBtn');
+                this.workDownBtn = document.getElementById('workDownBtn');
+                this.breakUpBtn = document.getElementById('breakUpBtn');
+                this.breakDownBtn = document.getElementById('breakDownBtn');
+                
+                // Fullscreen elements
+                this.fullscreenBtn = document.getElementById('fullscreenBtn');
+                this.fullscreenOverlay = document.getElementById('fullscreenTimerOverlay');
+                this.fullscreenClose = document.getElementById('fullscreenTimerClose');
+                this.fullscreenTimerDisplay = document.getElementById('fullscreenTimerDisplay');
+                this.fullscreenStatus = document.getElementById('fullscreenStatus');
+                this.fullscreenProgressCircle = document.getElementById('fullscreenProgressCircle');
+                this.fullscreenCompletionControls = document.getElementById('fullscreenCompletionControls');
+                this.fullscreenStartBtn = document.getElementById('fullscreenStartBtn');
+                this.fullscreenPauseBtn = document.getElementById('fullscreenPauseBtn');
+                this.fullscreenResetBtn = document.getElementById('fullscreenResetBtn');
+                this.fullscreenStartBreakBtn = document.getElementById('fullscreenStartBreakBtn');
+                this.fullscreenSkipBreakBtn = document.getElementById('fullscreenSkipBreakBtn');
+                this.fullscreenEncouragement = document.getElementById('fullscreenEncouragement');
+                
+                this.createEncouragementElement();
+                this.initializeEventListeners();
+                this.updateDurationDisplays();
+                this.updateDisplay();
+                this.updateProgress();
+                this.updateModeIndicator();
+            }
+
+            initializeEventListeners() {
+                this.startBtn.addEventListener('click', () => this.start());
+                this.pauseBtn.addEventListener('click', () => this.pause());
+                this.resetBtn.addEventListener('click', () => this.reset());
+                this.startBreakBtn.addEventListener('click', () => this.startBreak());
+                this.skipBreakBtn.addEventListener('click', () => this.skipBreak());
+                
+                this.workUpBtn.addEventListener('click', () => this.adjustDuration('work', 1));
+                this.workDownBtn.addEventListener('click', () => this.adjustDuration('work', -1));
+                this.breakUpBtn.addEventListener('click', () => this.adjustDuration('break', 1));
+                this.breakDownBtn.addEventListener('click', () => this.adjustDuration('break', -1));
+                
+                // Fullscreen event listeners
+                this.fullscreenBtn.addEventListener('click', () => this.openFullscreen());
+                this.fullscreenClose.addEventListener('click', () => this.closeFullscreen());
+                this.fullscreenOverlay.addEventListener('click', (e) => {
+                    if (e.target === this.fullscreenOverlay) {
+                        this.closeFullscreen();
+                    }
+                });
+                
+                this.fullscreenStartBtn.addEventListener('click', () => this.start());
+                this.fullscreenPauseBtn.addEventListener('click', () => this.pause());
+                this.fullscreenResetBtn.addEventListener('click', () => this.reset());
+                this.fullscreenStartBreakBtn.addEventListener('click', () => this.startBreak());
+                this.fullscreenSkipBreakBtn.addEventListener('click', () => this.skipBreak());
+            }
+
+            start() {
+                if (!this.isRunning) {
+                    this.isRunning = true;
+                    this.status.textContent = this.isBreakMode ? '休憩中...' : '作業中...';
+                    this.startBtn.disabled = true;
+                    this.pauseBtn.disabled = false;
+                    this.hideCompletionControls();
+                    this.syncButtonStates();
+                    this.syncStatus();
+                    this.syncCompletionControls();
+                    
+                    if (!this.isBreakMode) {
+                        this.showInitialEncouragement();
+                        this.startEncouragementMessages();
+                    }
+                    
+                    this.intervalId = setInterval(() => {
+                        this.timeLeft--;
+                        this.updateDisplay();
+                        this.updateProgress();
+                        
+                        if (this.timeLeft <= 0) {
+                            this.complete();
+                        }
+                    }, 1000);
+                }
+            }
+
+            pause() {
+                if (this.isRunning) {
+                    this.isRunning = false;
+                    this.status.textContent = '一時停止中';
+                    this.startBtn.disabled = false;
+                    this.pauseBtn.disabled = true;
+                    this.syncButtonStates();
+                    this.syncStatus();
+                    
+                    clearInterval(this.intervalId);
+                    this.stopEncouragementMessages();
+                }
+            }
+
+            reset() {
+                this.isRunning = false;
+                this.isBreakMode = false;
+                this.timeLeft = this.workDuration;
+                this.status.textContent = '準備完了';
+                this.startBtn.disabled = false;
+                this.pauseBtn.disabled = true;
+                
+                clearInterval(this.intervalId);
+                this.stopEncouragementMessages();
+                this.hideCompletionControls();
+                this.updateDisplay();
+                this.updateProgress();
+                this.updateModeIndicator();
+                this.syncButtonStates();
+                this.syncStatus();
+                this.syncCompletionControls();
+            }
+
+            complete() {
+                this.isRunning = false;
+                this.startBtn.disabled = false;
+                this.pauseBtn.disabled = true;
+                
+                clearInterval(this.intervalId);
+                this.stopEncouragementMessages();
+                
+                // 完了時エフェクト
+                this.playCompletionEffect();
+                this.playNotification();
+                
+                if (this.isBreakMode) {
+                    this.status.textContent = '🎉 休憩完了！次のポモドーロを始めましょう！';
+                    this.isBreakMode = false;
+                    this.timeLeft = this.workDuration;
+                    this.updateDisplay();
+                    this.updateProgress();
+                    this.updateModeIndicator();
+                } else {
+                    this.status.textContent = '🎉 ポモドーロ完了！休憩しますか？';
+                    this.showCompletionControls();
+                    this.recordPomodoroSession();
+                }
+                
+                this.syncButtonStates();
+                this.syncStatus();
+                this.syncCompletionControls();
+            }
+
+            playCompletionEffect() {
+                // メイン画面の完了エフェクト
+                this.progressCircle.classList.add('progress-ring-complete');
+                setTimeout(() => {
+                    this.progressCircle.classList.remove('progress-ring-complete');
+                }, 800);
+                
+                // フルスクリーン画面の完了エフェクト
+                if (this.fullscreenProgressCircle) {
+                    this.fullscreenProgressCircle.classList.add('fullscreen-progress-ring-complete');
+                    setTimeout(() => {
+                        this.fullscreenProgressCircle.classList.remove('fullscreen-progress-ring-complete');
+                    }, 800);
+                }
+            }
+
+            recordPomodoroSession() {
+                const today = new Date().toDateString();
+                const stats = this.loadStats();
+                
+                if (!stats[today]) {
+                    stats[today] = { pomodoros: 0, workTime: 0 };
+                }
+                
+                stats[today].pomodoros += 1;
+                stats[today].workTime += this.settings.workDuration;
+                
+                this.saveStats(stats);
+                if (window.statsManager) {
+                    window.statsManager.updateStats();
+                }
+            }
+
+            loadStats() {
+                const saved = localStorage.getItem('pomodoro-stats');
+                return saved ? JSON.parse(saved) : {};
+            }
+
+            saveStats(stats) {
+                localStorage.setItem('pomodoro-stats', JSON.stringify(stats));
+            }
+
+            updateDisplay() {
+                const minutes = Math.floor(this.timeLeft / 60);
+                const seconds = this.timeLeft % 60;
+                const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                this.timerDisplay.textContent = timeString;
+                
+                // Update fullscreen display as well
+                if (this.fullscreenTimerDisplay) {
+                    this.fullscreenTimerDisplay.textContent = timeString;
+                }
+            }
+
+            updateProgress() {
+                const totalDuration = this.isBreakMode ? this.breakDuration : this.workDuration;
+                const progress = (totalDuration - this.timeLeft) / totalDuration;
+                
+                // Update main progress circle
+                const circumference = 2 * Math.PI * 80; // r = 80
+                const offset = circumference - (progress * circumference);
+                this.progressCircle.style.strokeDashoffset = offset;
+                
+                if (this.isRunning) {
+                    this.progressCircle.classList.add('progress-ring-active');
+                } else {
+                    this.progressCircle.classList.remove('progress-ring-active');
+                }
+                
+                // Update fullscreen progress circle
+                if (this.fullscreenProgressCircle) {
+                    const fullscreenCircumference = 2 * Math.PI * 110; // r = 110
+                    const fullscreenOffset = fullscreenCircumference - (progress * fullscreenCircumference);
+                    this.fullscreenProgressCircle.style.strokeDashoffset = fullscreenOffset;
+                    
+                    if (this.isRunning) {
+                        this.fullscreenProgressCircle.classList.add('fullscreen-progress-ring-active');
+                    } else {
+                        this.fullscreenProgressCircle.classList.remove('fullscreen-progress-ring-active');
+                    }
+                }
+            }
+
+            startBreak() {
+                this.isBreakMode = true;
+                this.timeLeft = this.breakDuration;
+                this.updateDisplay();
+                this.updateProgress();
+                this.updateModeIndicator();
+                this.start();
+            }
+
+            skipBreak() {
+                this.isBreakMode = false;
+                this.timeLeft = this.workDuration;
+                this.status.textContent = '準備完了';
+                this.hideCompletionControls();
+                this.updateDisplay();
+                this.updateProgress();
+                this.updateModeIndicator();
+            }
+
+            showCompletionControls() {
+                this.completionControls.classList.add('show');
+            }
+
+            hideCompletionControls() {
+                this.completionControls.classList.remove('show');
+            }
+
+            updateModeIndicator() {
+                const workText = '🍅 作業モード';
+                const breakText = '☕ 休憩モード';
+                const workClass = 'mode-indicator work-mode';
+                const breakClass = 'mode-indicator break-mode';
+                
+                if (this.isBreakMode) {
+                    this.modeIndicator.textContent = breakText;
+                    this.modeIndicator.className = breakClass;
+                } else {
+                    this.modeIndicator.textContent = workText;
+                    this.modeIndicator.className = workClass;
+                }
+            }
+
+            adjustDuration(type, change) {
+                if (this.isRunning) return;
+                
+                const key = type === 'work' ? 'workDuration' : 'breakDuration';
+                const newValue = Math.max(1, Math.min(60, this.settings[key] + change));
+                
+                this.settings[key] = newValue;
+                this.saveSettings();
+                
+                if (type === 'work') {
+                    this.workDuration = newValue * 60;
+                    if (!this.isBreakMode) {
+                        this.timeLeft = this.workDuration;
+                    }
+                } else {
+                    this.breakDuration = newValue * 60;
+                    if (this.isBreakMode) {
+                        this.timeLeft = this.breakDuration;
+                    }
+                }
+                
+                this.updateDurationDisplays();
+                this.updateDisplay();
+                this.updateProgress();
+            }
+
+            updateDurationDisplays() {
+                this.workDurationDisplay.textContent = `${this.settings.workDuration}分`;
+                this.breakDurationDisplay.textContent = `${this.settings.breakDuration}分`;
+            }
+
+            loadSettings() {
+                const saved = localStorage.getItem('pomodoro-settings');
+                return saved ? JSON.parse(saved) : {
+                    workDuration: 15,
+                    breakDuration: 5
+                };
+            }
+
+            saveSettings() {
+                localStorage.setItem('pomodoro-settings', JSON.stringify(this.settings));
+            }
+
+            createEncouragementElement() {
+                const timerContainer = document.querySelector('.timer-container');
+                this.encouragementEl = document.createElement('div');
+                this.encouragementEl.className = 'encouragement';
+                timerContainer.appendChild(this.encouragementEl);
+            }
+
+            showInitialEncouragement() {
+                const startMessages = this.encouragementMessages.start;
+                const randomIndex = Math.floor(Math.random() * startMessages.length);
+                const message = startMessages[randomIndex];
+                
+                this.encouragementEl.textContent = message;
+                this.encouragementEl.classList.add('show');
+                
+                // Show in fullscreen too
+                if (this.fullscreenEncouragement) {
+                    this.fullscreenEncouragement.textContent = message;
+                    this.fullscreenEncouragement.classList.add('show');
+                }
+            }
+
+            startEncouragementMessages() {
+                this.encouragementIntervalId = setInterval(() => {
+                    if (this.isRunning && !this.isBreakMode) {
+                        this.showContextualEncouragement();
+                    }
+                }, 1 * 60 * 1000); // 1分間隔
+            }
+
+            stopEncouragementMessages() {
+                if (this.encouragementIntervalId) {
+                    clearInterval(this.encouragementIntervalId);
+                    this.encouragementIntervalId = null;
+                }
+                this.hideEncouragement();
+            }
+
+            showContextualEncouragement() {
+                const phase = this.getCurrentPhase();
+                const messages = this.encouragementMessages[phase];
+                const randomIndex = Math.floor(Math.random() * messages.length);
+                const message = messages[randomIndex];
+                
+                this.encouragementEl.textContent = message;
+                this.encouragementEl.classList.add('show');
+                
+                // Show in fullscreen too
+                if (this.fullscreenEncouragement) {
+                    this.fullscreenEncouragement.textContent = message;
+                    this.fullscreenEncouragement.classList.add('show');
+                }
+            }
+
+            getCurrentPhase() {
+                const elapsed = this.workDuration - this.timeLeft;
+                const progress = elapsed / this.workDuration;
+                
+                if (progress < 0.3) {
+                    return 'start';
+                } else if (progress > 0.7) {
+                    return 'end';
+                } else {
+                    return 'middle';
+                }
+            }
+
+            hideEncouragement() {
+                if (this.encouragementEl) {
+                    this.encouragementEl.classList.remove('show');
+                }
+                if (this.fullscreenEncouragement) {
+                    this.fullscreenEncouragement.classList.remove('show');
+                }
+            }
+
+            openFullscreen() {
+                this.syncToFullscreen();
+                this.fullscreenOverlay.classList.add('show');
+            }
+            
+            closeFullscreen() {
+                this.fullscreenOverlay.classList.remove('show');
+            }
+            
+            syncToFullscreen() {
+                // Sync timer state to fullscreen
+                this.updateDisplay();
+                this.updateProgress();
+                this.syncButtonStates();
+                this.syncStatus();
+                this.syncCompletionControls();
+            }
+            
+            syncButtonStates() {
+                if (this.fullscreenStartBtn && this.fullscreenPauseBtn) {
+                    this.fullscreenStartBtn.disabled = this.startBtn.disabled;
+                    this.fullscreenPauseBtn.disabled = this.pauseBtn.disabled;
+                }
+            }
+            
+            syncStatus() {
+                if (this.fullscreenStatus) {
+                    this.fullscreenStatus.textContent = this.status.textContent;
+                }
+            }
+            
+            syncCompletionControls() {
+                if (this.fullscreenCompletionControls) {
+                    if (this.completionControls.classList.contains('show')) {
+                        this.fullscreenCompletionControls.classList.add('show');
+                    } else {
+                        this.fullscreenCompletionControls.classList.remove('show');
+                    }
+                }
+                
+                if (this.fullscreenStartBreakBtn) {
+                    this.fullscreenStartBreakBtn.textContent = this.startBreakBtn.textContent;
+                }
+            }
+
+            playNotification() {
+                const message = this.isBreakMode ? 
+                    `${this.settings.breakDuration}分間の休憩が完了しました！次のポモドーロを始めましょう！` : 
+                    `${this.settings.workDuration}分間の作業が完了しました！お疲れ様でした！`;
+                
+                // ブラウザ通知
+                if (Notification.permission === 'granted') {
+                    new Notification('ポモドーロタイマー', {
+                        body: message,
+                        icon: '🍅'
+                    });
+                } else if (Notification.permission !== 'denied') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            new Notification('ポモドーロタイマー', {
+                                body: message,
+                                icon: '🍅'
+                            });
+                        }
+                    });
+                }
+
+                // 音声通知（簡易版）
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.value = 800;
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 1);
+                } catch (error) {
+                    console.log('音声通知を再生できませんでした');
+                }
+            }
+        }
+
+        class TaskManager {
+            constructor() {
+                this.tasks = this.loadTasks();
+                this.currentDate = this.getCurrentDate();
+                this.currentTaskId = null;
+                
+                this.taskInput = document.getElementById('taskInput');
+                this.addTaskBtn = document.getElementById('addTaskBtn');
+                this.taskList = document.getElementById('taskList');
+                this.currentDateEl = document.getElementById('currentDate');
+                
+                this.taskDialog = document.getElementById('taskDialogOverlay');
+                this.taskDialogTitle = document.getElementById('taskDialogTitle');
+                this.taskDialogClose = document.getElementById('taskDialogClose');
+                this.subtaskInput = document.getElementById('subtaskInput');
+                this.addSubtaskBtn = document.getElementById('addSubtaskBtn');
+                this.subtaskList = document.getElementById('subtaskList');
+                this.subtaskProgress = document.getElementById('subtaskProgress');
+                
+                this.initializeEventListeners();
+                this.displayCurrentDate();
+                this.renderTasks();
+            }
+
+            initializeEventListeners() {
+                this.addTaskBtn.addEventListener('click', () => this.addTask());
+                this.taskInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.addTask();
+                    }
+                });
+                
+                // Dialog event listeners
+                this.taskDialogClose.addEventListener('click', () => this.closeTaskDialog());
+                this.taskDialog.addEventListener('click', (e) => {
+                    if (e.target === this.taskDialog) {
+                        this.closeTaskDialog();
+                    }
+                });
+                
+                this.addSubtaskBtn.addEventListener('click', () => this.addSubtask());
+                this.subtaskInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.addSubtask();
+                    }
+                });
+            }
+
+            getCurrentDate() {
+                return new Date().toLocaleDateString('ja-JP', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'long'
+                });
+            }
+
+            displayCurrentDate() {
+                this.currentDateEl.textContent = this.currentDate;
+            }
+
+            addTask() {
+                const taskText = this.taskInput.value.trim();
+                if (taskText) {
+                    const task = {
+                        id: Date.now(),
+                        text: taskText,
+                        completed: false,
+                        date: this.getCurrentDate(),
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    this.tasks.unshift(task);
+                    this.taskInput.value = '';
+                    this.saveTasks();
+                    this.renderTasks();
+                }
+            }
+
+            toggleTask(taskId) {
+                const task = this.tasks.find(t => t.id === taskId);
+                if (task) {
+                    task.completed = !task.completed;
+                    task.completedAt = task.completed ? new Date().toISOString() : null;
+                    this.saveTasks();
+                    this.renderTasks();
+                    
+                    if (window.statsManager) {
+                        window.statsManager.updateStats();
+                    }
+                }
+            }
+
+            deleteTask(taskId) {
+                this.tasks = this.tasks.filter(t => t.id !== taskId);
+                this.saveTasks();
+                this.renderTasks();
+            }
+
+            renderTasks() {
+                this.taskList.innerHTML = '';
+                
+                if (this.tasks.length === 0) {
+                    this.taskList.innerHTML = '<div style="text-align: center; opacity: 0.6; margin: 40px 0;">タスクがありません</div>';
+                    return;
+                }
+                
+                const tasksByDate = this.groupTasksByDate();
+                
+                Object.keys(tasksByDate).forEach(date => {
+                    if (date !== this.currentDate) {
+                        const separator = document.createElement('div');
+                        separator.className = 'date-separator';
+                        separator.textContent = date;
+                        this.taskList.appendChild(separator);
+                    }
+                    
+                    tasksByDate[date].forEach(task => {
+                        const taskEl = this.createTaskElement(task);
+                        this.taskList.appendChild(taskEl);
+                    });
+                });
+            }
+
+            groupTasksByDate() {
+                const grouped = {};
+                this.tasks.forEach(task => {
+                    if (!grouped[task.date]) {
+                        grouped[task.date] = [];
+                    }
+                    grouped[task.date].push(task);
+                });
+                return grouped;
+            }
+
+            createTaskElement(task) {
+                const taskEl = document.createElement('div');
+                taskEl.className = `task-item ${task.completed ? 'completed' : ''}`;
+                taskEl.draggable = true;
+                taskEl.dataset.taskId = task.id;
+                
+                const subtaskCount = task.subtasks ? task.subtasks.length : 0;
+                const completedSubtasks = task.subtasks ? task.subtasks.filter(st => st.completed).length : 0;
+                const progressIndicator = subtaskCount > 0 ? `<span class="task-progress-indicator">(${completedSubtasks}/${subtaskCount})</span>` : '';
+                
+                taskEl.innerHTML = `
+                    <div class="drag-handle">⋮⋮</div>
+                    <div class="task-checkbox ${task.completed ? 'checked' : ''}" data-task-id="${task.id}"></div>
+                    <div class="task-text">${this.escapeHtml(task.text)}${progressIndicator}</div>
+                    <button class="task-delete" data-task-id="${task.id}">×</button>
+                `;
+                
+                const checkbox = taskEl.querySelector('.task-checkbox');
+                const deleteBtn = taskEl.querySelector('.task-delete');
+                
+                checkbox.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleTask(task.id);
+                });
+                
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.deleteTask(task.id);
+                });
+                
+                // Task card click event for opening dialog
+                taskEl.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('task-checkbox') && 
+                        !e.target.classList.contains('task-delete') && 
+                        !e.target.classList.contains('drag-handle')) {
+                        this.openTaskDialog(task.id);
+                    }
+                });
+                
+                this.addDragListeners(taskEl);
+                
+                return taskEl;
+            }
+
+            addDragListeners(taskEl) {
+                taskEl.addEventListener('dragstart', (e) => {
+                    this.draggedElement = taskEl;
+                    taskEl.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/html', taskEl.outerHTML);
+                });
+                
+                taskEl.addEventListener('dragend', (e) => {
+                    taskEl.classList.remove('dragging');
+                    this.clearDragOver();
+                });
+                
+                taskEl.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    
+                    if (taskEl !== this.draggedElement) {
+                        this.clearDragOver();
+                        taskEl.classList.add('drag-over');
+                    }
+                });
+                
+                taskEl.addEventListener('dragleave', (e) => {
+                    if (!taskEl.contains(e.relatedTarget)) {
+                        taskEl.classList.remove('drag-over');
+                    }
+                });
+                
+                taskEl.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (taskEl !== this.draggedElement) {
+                        this.reorderTasks(this.draggedElement, taskEl);
+                    }
+                    this.clearDragOver();
+                });
+            }
+
+            clearDragOver() {
+                document.querySelectorAll('.task-item').forEach(item => {
+                    item.classList.remove('drag-over');
+                });
+            }
+
+            reorderTasks(draggedEl, targetEl) {
+                const draggedId = parseInt(draggedEl.dataset.taskId);
+                const targetId = parseInt(targetEl.dataset.taskId);
+                
+                const draggedIndex = this.tasks.findIndex(t => t.id === draggedId);
+                const targetIndex = this.tasks.findIndex(t => t.id === targetId);
+                
+                if (draggedIndex !== -1 && targetIndex !== -1) {
+                    const [draggedTask] = this.tasks.splice(draggedIndex, 1);
+                    this.tasks.splice(targetIndex, 0, draggedTask);
+                    
+                    this.saveTasks();
+                    this.renderTasks();
+                }
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            saveTasks() {
+                localStorage.setItem('pomodoro-tasks', JSON.stringify(this.tasks));
+            }
+
+            loadTasks() {
+                const saved = localStorage.getItem('pomodoro-tasks');
+                return saved ? JSON.parse(saved) : [];
+            }
+            
+            // Task dialog methods
+            openTaskDialog(taskId) {
+                const task = this.tasks.find(t => t.id === taskId);
+                if (!task) return;
+                
+                this.currentTaskId = taskId;
+                this.taskDialogTitle.textContent = task.text;
+                
+                // Load subtasks
+                this.renderSubtasks();
+                this.updateSubtaskProgress();
+                
+                // Show dialog
+                this.taskDialog.classList.add('show');
+                this.subtaskInput.focus();
+            }
+            
+            closeTaskDialog() {
+                this.taskDialog.classList.remove('show');
+                this.currentTaskId = null;
+                this.subtaskInput.value = '';
+            }
+            
+            addSubtask() {
+                if (!this.currentTaskId) return;
+                
+                const subtaskText = this.subtaskInput.value.trim();
+                if (!subtaskText) return;
+                
+                const task = this.tasks.find(t => t.id === this.currentTaskId);
+                if (!task) return;
+                
+                if (!task.subtasks) {
+                    task.subtasks = [];
+                }
+                
+                const subtask = {
+                    id: Date.now(),
+                    text: subtaskText,
+                    completed: false,
+                    createdAt: new Date().toISOString()
+                };
+                
+                task.subtasks.push(subtask);
+                this.subtaskInput.value = '';
+                this.saveTasks();
+                this.renderSubtasks();
+                this.updateSubtaskProgress();
+                this.renderTasks(); // Update main task list to show progress
+            }
+            
+            toggleSubtask(subtaskId) {
+                if (!this.currentTaskId) return;
+                
+                const task = this.tasks.find(t => t.id === this.currentTaskId);
+                if (!task || !task.subtasks) return;
+                
+                const subtask = task.subtasks.find(st => st.id === subtaskId);
+                if (!subtask) return;
+                
+                subtask.completed = !subtask.completed;
+                subtask.completedAt = subtask.completed ? new Date().toISOString() : null;
+                
+                this.saveTasks();
+                this.renderSubtasks();
+                this.updateSubtaskProgress();
+                this.renderTasks();
+            }
+            
+            deleteSubtask(subtaskId) {
+                if (!this.currentTaskId) return;
+                
+                const task = this.tasks.find(t => t.id === this.currentTaskId);
+                if (!task || !task.subtasks) return;
+                
+                task.subtasks = task.subtasks.filter(st => st.id !== subtaskId);
+                this.saveTasks();
+                this.renderSubtasks();
+                this.updateSubtaskProgress();
+                this.renderTasks();
+            }
+            
+            renderSubtasks() {
+                if (!this.currentTaskId) return;
+                
+                const task = this.tasks.find(t => t.id === this.currentTaskId);
+                if (!task) return;
+                
+                this.subtaskList.innerHTML = '';
+                
+                if (!task.subtasks || task.subtasks.length === 0) {
+                    this.subtaskList.innerHTML = '<div style="text-align: center; opacity: 0.6; margin: 20px 0;">サブタスクがありません</div>';
+                    return;
+                }
+                
+                task.subtasks.forEach(subtask => {
+                    const subtaskEl = this.createSubtaskElement(subtask);
+                    this.subtaskList.appendChild(subtaskEl);
+                });
+            }
+            
+            createSubtaskElement(subtask) {
+                const subtaskEl = document.createElement('div');
+                subtaskEl.className = `subtask-item ${subtask.completed ? 'completed' : ''}`;
+                
+                subtaskEl.innerHTML = `
+                    <div class="subtask-checkbox ${subtask.completed ? 'checked' : ''}" data-subtask-id="${subtask.id}"></div>
+                    <div class="subtask-text">${this.escapeHtml(subtask.text)}</div>
+                    <button class="subtask-delete" data-subtask-id="${subtask.id}">×</button>
+                `;
+                
+                const checkbox = subtaskEl.querySelector('.subtask-checkbox');
+                const deleteBtn = subtaskEl.querySelector('.subtask-delete');
+                
+                checkbox.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleSubtask(subtask.id);
+                });
+                
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.deleteSubtask(subtask.id);
+                });
+                
+                return subtaskEl;
+            }
+            
+            updateSubtaskProgress() {
+                if (!this.currentTaskId) return;
+                
+                const task = this.tasks.find(t => t.id === this.currentTaskId);
+                if (!task || !task.subtasks) {
+                    this.subtaskProgress.textContent = '完了: 0 / 0';
+                    return;
+                }
+                
+                const completed = task.subtasks.filter(st => st.completed).length;
+                const total = task.subtasks.length;
+                this.subtaskProgress.textContent = `完了: ${completed} / ${total}`;
+            }
+        }
+
+        class StatsManager {
+            constructor() {
+                this.todayPomodorosEl = document.getElementById('todayPomodoros');
+                this.completedTasksEl = document.getElementById('completedTasks');
+                this.totalTimeEl = document.getElementById('totalTime');
+                this.weeklyPomodorosEl = document.getElementById('weeklyPomodoros');
+                this.dailyProgressEl = document.getElementById('dailyProgress');
+                this.weeklyChartEl = document.getElementById('weeklyChart');
+                
+                this.dailyGoal = 4; // 1日のポモドーロ目標数
+                
+                this.updateStats();
+                window.statsManager = this;
+            }
+
+            updateStats() {
+                const stats = this.loadStats();
+                const tasks = this.loadTasks();
+                const today = new Date().toDateString();
+                
+                // 今日の統計
+                const todayStats = stats[today] || { pomodoros: 0, workTime: 0 };
+                const todayCompletedTasks = tasks.filter(task => 
+                    task.completed && 
+                    task.completedAt && 
+                    new Date(task.completedAt).toDateString() === today
+                ).length;
+                
+                // 今週の統計
+                const weekStats = this.getWeekStats(stats);
+                
+                // 表示を更新
+                this.todayPomodorosEl.textContent = todayStats.pomodoros;
+                this.completedTasksEl.textContent = todayCompletedTasks;
+                this.totalTimeEl.textContent = `${Math.round(todayStats.workTime / 60 * 10) / 10}h`;
+                this.weeklyPomodorosEl.textContent = weekStats.totalPomodoros;
+                
+                // 進捗バーを更新
+                const progressPercent = Math.min(100, (todayStats.pomodoros / this.dailyGoal) * 100);
+                this.dailyProgressEl.style.width = `${progressPercent}%`;
+                this.dailyProgressEl.textContent = `${Math.round(progressPercent)}%`;
+                
+                // 週間チャートを更新
+                this.updateWeeklyChart(weekStats.dailyData);
+            }
+
+            getWeekStats(stats) {
+                const today = new Date();
+                const dailyData = [0, 0, 0, 0, 0, 0, 0]; // [日, 月, 火, 水, 木, 金, 土]
+                let totalPomodoros = 0;
+                
+                // 今週の日曜日を取得
+                const thisWeekSunday = new Date(today);
+                thisWeekSunday.setDate(today.getDate() - today.getDay());
+                
+                // 日曜日から土曜日まで、各日のデータを取得
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(thisWeekSunday);
+                    date.setDate(thisWeekSunday.getDate() + i);
+                    const dateString = date.toDateString();
+                    
+                    const dayStats = stats[dateString] || { pomodoros: 0, workTime: 0 };
+                    dailyData[i] = dayStats.pomodoros;
+                    totalPomodoros += dayStats.pomodoros;
+                }
+                
+                return { dailyData, totalPomodoros };
+            }
+
+            updateWeeklyChart(dailyData) {
+                const maxPomodoros = Math.max(...dailyData, 1);
+                const dayBars = this.weeklyChartEl.querySelectorAll('.day-bar');
+                
+                dailyData.forEach((pomodoros, index) => {
+                    const bar = dayBars[index];
+                    const height = Math.max(3, (pomodoros / maxPomodoros) * 60);
+                    bar.style.height = `${height}px`;
+                    
+                    if (pomodoros > 0) {
+                        bar.classList.add('active');
+                    } else {
+                        bar.classList.remove('active');
+                    }
+                });
+            }
+
+            loadStats() {
+                const saved = localStorage.getItem('pomodoro-stats');
+                return saved ? JSON.parse(saved) : {};
+            }
+
+            loadTasks() {
+                const saved = localStorage.getItem('pomodoro-tasks');
+                return saved ? JSON.parse(saved) : [];
+            }
+        }
+
+        class CalendarManager {
+            constructor() {
+                this.currentDate = new Date();
+                this.selectedDate = null;
+                
+                this.calendarGrid = document.getElementById('calendarGrid');
+                this.calendarMonth = document.getElementById('calendarMonth');
+                this.prevMonthBtn = document.getElementById('prevMonthBtn');
+                this.nextMonthBtn = document.getElementById('nextMonthBtn');
+                
+                this.pastTasksDialog = document.getElementById('pastTasksDialogOverlay');
+                this.pastTasksDialogTitle = document.getElementById('pastTasksDialogTitle');
+                this.pastTasksDialogClose = document.getElementById('pastTasksDialogClose');
+                this.pastTasksList = document.getElementById('pastTasksList');
+                this.pastTasksEmpty = document.getElementById('pastTasksEmpty');
+                
+                this.initializeEventListeners();
+                this.renderCalendar();
+            }
+            
+            initializeEventListeners() {
+                this.prevMonthBtn.addEventListener('click', () => this.previousMonth());
+                this.nextMonthBtn.addEventListener('click', () => this.nextMonth());
+                
+                this.pastTasksDialogClose.addEventListener('click', () => this.closePastTasksDialog());
+                this.pastTasksDialog.addEventListener('click', (e) => {
+                    if (e.target === this.pastTasksDialog) {
+                        this.closePastTasksDialog();
+                    }
+                });
+            }
+            
+            previousMonth() {
+                this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+                this.renderCalendar();
+            }
+            
+            nextMonth() {
+                this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+                this.renderCalendar();
+            }
+            
+            renderCalendar() {
+                const year = this.currentDate.getFullYear();
+                const month = this.currentDate.getMonth();
+                
+                // Update month display
+                this.calendarMonth.textContent = `${year}年${month + 1}月`;
+                
+                // Clear calendar
+                this.calendarGrid.innerHTML = '';
+                
+                // Add day headers
+                const dayHeaders = ['日', '月', '火', '水', '木', '金', '土'];
+                dayHeaders.forEach(day => {
+                    const dayEl = document.createElement('div');
+                    dayEl.className = 'calendar-day calendar-day-header';
+                    dayEl.textContent = day;
+                    this.calendarGrid.appendChild(dayEl);
+                });
+                
+                // Get first day of the month and number of days
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const daysInMonth = lastDay.getDate();
+                const startDay = firstDay.getDay();
+                
+                // Add empty cells for days before the first day of the month
+                for (let i = 0; i < startDay; i++) {
+                    const prevMonthDay = new Date(year, month, -startDay + i + 1);
+                    const dayEl = this.createDayElement(prevMonthDay, true);
+                    this.calendarGrid.appendChild(dayEl);
+                }
+                
+                // Add days of the current month
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month, day);
+                    const dayEl = this.createDayElement(date, false);
+                    this.calendarGrid.appendChild(dayEl);
+                }
+                
+                // Add days from next month to fill the grid
+                const totalCells = this.calendarGrid.children.length - 7; // Subtract header row
+                const remainingCells = 42 - totalCells; // 6 rows * 7 days - current cells
+                for (let day = 1; day <= remainingCells; day++) {
+                    const nextMonthDay = new Date(year, month + 1, day);
+                    const dayEl = this.createDayElement(nextMonthDay, true);
+                    this.calendarGrid.appendChild(dayEl);
+                }
+            }
+            
+            createDayElement(date, isOtherMonth) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                dayEl.textContent = date.getDate();
+                
+                if (isOtherMonth) {
+                    dayEl.classList.add('other-month');
+                }
+                
+                // Check if it's today
+                const today = new Date();
+                if (date.toDateString() === today.toDateString()) {
+                    dayEl.classList.add('today');
+                }
+                
+                // Check if this date has tasks
+                if (this.hasTasksOnDate(date)) {
+                    dayEl.classList.add('has-tasks');
+                }
+                
+                // Add click event
+                dayEl.addEventListener('click', () => {
+                    if (!isOtherMonth || this.hasTasksOnDate(date)) {
+                        this.openPastTasksDialog(date);
+                    }
+                });
+                
+                return dayEl;
+            }
+            
+            hasTasksOnDate(date) {
+                const tasks = this.loadTasks();
+                const dateString = date.toLocaleDateString('ja-JP', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'long'
+                });
+                
+                return tasks.some(task => task.date === dateString);
+            }
+            
+            openPastTasksDialog(date) {
+                this.selectedDate = date;
+                const dateString = date.toLocaleDateString('ja-JP', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'long'
+                });
+                
+                this.pastTasksDialogTitle.textContent = `過去のタスク - ${dateString}`;
+                this.renderPastTasks(dateString);
+                this.pastTasksDialog.classList.add('show');
+            }
+            
+            closePastTasksDialog() {
+                this.pastTasksDialog.classList.remove('show');
+                this.selectedDate = null;
+            }
+            
+            renderPastTasks(dateString) {
+                const tasks = this.loadTasks().filter(task => task.date === dateString);
+                
+                this.pastTasksList.innerHTML = '';
+                
+                if (tasks.length === 0) {
+                    this.pastTasksEmpty.style.display = 'block';
+                    this.pastTasksList.style.display = 'none';
+                    return;
+                }
+                
+                this.pastTasksEmpty.style.display = 'none';
+                this.pastTasksList.style.display = 'block';
+                
+                tasks.forEach(task => {
+                    const taskEl = this.createPastTaskElement(task);
+                    this.pastTasksList.appendChild(taskEl);
+                });
+            }
+            
+            createPastTaskElement(task) {
+                const taskEl = document.createElement('div');
+                taskEl.className = `past-task-item ${task.completed ? 'completed' : ''}`;
+                
+                taskEl.innerHTML = `
+                    <div class="past-task-status ${task.completed ? 'completed' : ''}"></div>
+                    <div class="past-task-text ${task.completed ? 'completed' : ''}">${this.escapeHtml(task.text)}</div>
+                    <button class="copy-task-btn" data-task-text="${this.escapeHtml(task.text)}">コピー</button>
+                `;
+                
+                const copyBtn = taskEl.querySelector('.copy-task-btn');
+                copyBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.copyTaskToToday(task.text, task.subtasks);
+                });
+                
+                return taskEl;
+            }
+            
+            copyTaskToToday(taskText, subtasks = null) {
+                // Get today's date string
+                const today = new Date();
+                const todayString = today.toLocaleDateString('ja-JP', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'long'
+                });
+                
+                // Create new task
+                const newTask = {
+                    id: Date.now(),
+                    text: taskText,
+                    completed: false,
+                    date: todayString,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Copy subtasks if they exist
+                if (subtasks && subtasks.length > 0) {
+                    newTask.subtasks = subtasks.map(subtask => ({
+                        id: Date.now() + Math.random(),
+                        text: subtask.text,
+                        completed: false,
+                        createdAt: new Date().toISOString()
+                    }));
+                }
+                
+                // Add to tasks
+                const tasks = this.loadTasks();
+                tasks.unshift(newTask);
+                this.saveTasks(tasks);
+                
+                // Update UI
+                if (window.taskManager) {
+                    window.taskManager.tasks = tasks;
+                    window.taskManager.renderTasks();
+                }
+                
+                // Show feedback
+                this.showCopyFeedback();
+            }
+            
+            showCopyFeedback() {
+                // Create temporary feedback element
+                const feedback = document.createElement('div');
+                feedback.textContent = 'タスクをコピーしました！';
+                feedback.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(16, 160, 133, 0.9);
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    z-index: 3000;
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                `;
+                
+                document.body.appendChild(feedback);
+                
+                // Animate in
+                setTimeout(() => {
+                    feedback.style.opacity = '1';
+                }, 10);
+                
+                // Remove after 2 seconds
+                setTimeout(() => {
+                    feedback.style.opacity = '0';
+                    setTimeout(() => {
+                        document.body.removeChild(feedback);
+                    }, 300);
+                }, 2000);
+            }
+            
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            loadTasks() {
+                const saved = localStorage.getItem('pomodoro-tasks');
+                return saved ? JSON.parse(saved) : [];
+            }
+            
+            saveTasks(tasks) {
+                localStorage.setItem('pomodoro-tasks', JSON.stringify(tasks));
+            }
+        }
+
+        // タイマー、タスクマネージャー、統計マネージャー、カレンダーマネージャーを初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            new PomodoroTimer();
+            window.taskManager = new TaskManager();
+            new StatsManager();
+            new CalendarManager();
+        });
+    </script>
+</body>
+</html>
