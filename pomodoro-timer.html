@@ -557,6 +557,21 @@
             background: rgba(255, 107, 107, 0.2);
         }
 
+        .task-completed-mark {
+            color: #16a085;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+        }
+
         .date-separator {
             text-align: center;
             margin: 20px 0;
@@ -746,6 +761,13 @@
             margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 1px solid rgba(44, 62, 80, 0.2);
+        }
+
+        .fullscreen-timer-dialog .task-dialog-header {
+            border-bottom: none;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            justify-content: flex-end;
         }
 
         .task-dialog-title {
@@ -1176,12 +1198,12 @@
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             border-radius: 20px;
-            padding: 30px;
+            padding: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.8);
-            width: 90%;
-            max-width: 500px;
-            max-height: 90vh;
+            width: 95%;
+            max-width: 450px;
+            max-height: 95vh;
             overflow-y: auto;
             color: #2c3e50;
             transform: scale(0.8);
@@ -1197,7 +1219,24 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
+        }
+
+        .fullscreen-task-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: center;
+            max-width: 350px;
+            word-wrap: break-word;
+            line-height: 1.2;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 10px 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(139, 195, 74, 0.3);
         }
 
         .fullscreen-mode-indicator {
@@ -1216,44 +1255,50 @@
 
         .fullscreen-timer-container {
             position: relative;
-            display: inline-block;
-            margin: 20px 0;
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
         }
 
         .fullscreen-timer-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             font-size: 4.5em;
             font-weight: bold;
             font-family: 'Arial', sans-serif;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-            position: relative;
-            z-index: 1;
+            z-index: 10;
         }
 
         .fullscreen-progress-svg {
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%) rotate(-90deg);
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
         }
 
         .fullscreen-progress-ring-background {
             stroke: rgba(44, 62, 80, 0.1);
             stroke-width: 8;
             fill: transparent;
-            r: 110;
-            cx: 125;
-            cy: 125;
+            r: 130;
+            cx: 150;
+            cy: 150;
         }
 
         .fullscreen-progress-ring-circle {
             stroke: rgba(139, 195, 74, 0.6);
             stroke-width: 6;
             fill: transparent;
-            r: 110;
-            cx: 125;
-            cy: 125;
-            stroke-dasharray: 691.15;
-            stroke-dashoffset: 691.15;
+            r: 130;
+            cx: 150;
+            cy: 150;
+            stroke-dasharray: 816.81;
+            stroke-dashoffset: 816.81;
             transition: stroke-dashoffset 1s linear;
             stroke-linecap: round;
         }
@@ -1287,36 +1332,38 @@
             margin: 15px 0;
         }
 
-        .fullscreen-encouragement {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 12px 20px;
-            margin: 15px 0;
+
+        .fullscreen-bear-message {
+            background: rgba(255, 183, 77, 0.95);
             color: #2c3e50;
-            font-size: 1.2em;
-            font-weight: 600;
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             opacity: 0;
             visibility: hidden;
             transition: all 0.5s ease;
-            border: 1px solid rgba(139, 195, 74, 0.4);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
+            max-width: 350px;
             text-align: center;
+            margin: 5px 0;
+            position: relative;
+            z-index: 10;
         }
 
-        .fullscreen-encouragement.show {
-            opacity: 1;
-            visibility: visible;
+        .fullscreen-bear-message.show {
+            opacity: 1 !important;
+            visibility: visible !important;
             transform: scale(1.02);
+            display: block !important;
         }
 
         .fullscreen-completion-controls {
-            margin: 20px 0;
+            margin: 15px 0;
             display: none;
             justify-content: center;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             flex-wrap: wrap;
         }
 
@@ -1328,16 +1375,16 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             flex-wrap: wrap;
-            margin: 25px 0;
+            margin: 15px 0;
         }
 
         .fullscreen-controls button,
         .fullscreen-completion-controls button {
-            min-width: 110px;
-            padding: 12px 20px;
-            font-size: 1em;
+            min-width: 100px;
+            padding: 10px 16px;
+            font-size: 0.95em;
         }
 
         .fullscreen-button-container {
@@ -1630,7 +1677,7 @@
         }
 
         .progress-ring {
-            transform: rotate(-90deg);
+            transform: rotate(0deg);
         }
 
         .progress-ring-background {
@@ -1689,6 +1736,70 @@
             left: 50%;
             transform: translate(-50%, -50%);
         }
+
+        .polar-bear-runner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            font-size: 20px;
+            z-index: 10;
+            transform: translate(-50%, -50%) translateX(80px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .polar-bear-runner.running {
+            opacity: 1;
+            animation: bearRun 1s linear infinite;
+        }
+
+        .fullscreen-polar-bear-runner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            font-size: 30px;
+            z-index: 5;
+            transform: translate(-50%, -50%) translateX(130px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .fullscreen-polar-bear-runner.running {
+            opacity: 1;
+            animation: fullscreenBearRun 15s linear infinite;
+        }
+
+        .timer-flag {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            font-size: 16px;
+            z-index: 5;
+            transform: translate(-50%, -50%) translateX(80px);
+            opacity: 0.7;
+        }
+
+        .fullscreen-timer-flag {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            font-size: 24px;
+            z-index: 5;
+            transform: translate(-50%, -50%) translateX(130px);
+            opacity: 0.7;
+        }
+
+        @keyframes bearRun {
+            0% { transform: translate(-50%, -50%) rotate(0deg) translateX(80px) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg) translateX(80px) rotate(-360deg); }
+        }
+
+        @keyframes fullscreenBearRun {
+            0% { transform: translate(-50%, -50%) rotate(0deg) translateX(130px) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg) translateX(130px) rotate(-360deg); }
+        }
     </style>
 </head>
 <body>
@@ -1720,10 +1831,12 @@
             
             <div class="timer-container">
                 <div class="timer-display" id="timerDisplay">15:00</div>
-                <svg class="progress-svg" width="180" height="180">
+                <svg class="progress-svg progress-ring" width="180" height="180">
                     <circle class="progress-ring-background"></circle>
                     <circle class="progress-ring-circle" id="progressCircle"></circle>
                 </svg>
+                <div class="polar-bear-runner" id="polarBearRunner">🐻‍❄️</div>
+                <div class="timer-flag" id="timerFlag">🚩</div>
             </div>
             
             <div class="status" id="status">準備完了</div>
@@ -1860,22 +1973,25 @@
         <div class="task-dialog-overlay" id="fullscreenTimerOverlay">
             <div class="fullscreen-timer-dialog">
                 <div class="task-dialog-header">
-                    <div class="task-dialog-title">🍅 ポモドーロタイマー</div>
                     <button class="task-dialog-close" id="fullscreenTimerClose">×</button>
                 </div>
                 
                 <div class="fullscreen-timer-content">
+                    <div class="fullscreen-task-title" id="fullscreenTaskTitle">タスク実行中…</div>
+                    
                     <div class="fullscreen-timer-container">
                         <div class="fullscreen-timer-display" id="fullscreenTimerDisplay">15:00</div>
-                        <svg class="fullscreen-progress-svg" width="250" height="250">
+                        <svg class="fullscreen-progress-svg" width="300" height="300">
                             <circle class="fullscreen-progress-ring-background"></circle>
                             <circle class="fullscreen-progress-ring-circle" id="fullscreenProgressCircle"></circle>
                         </svg>
+                        <div class="fullscreen-polar-bear-runner" id="fullscreenPolarBearRunner">🐻‍❄️</div>
+                        <div class="fullscreen-timer-flag" id="fullscreenTimerFlag">🚩</div>
                     </div>
                     
                     <div class="fullscreen-status" id="fullscreenStatus">準備完了</div>
                     
-                    <div class="fullscreen-encouragement" id="fullscreenEncouragement"></div>
+                    <div class="fullscreen-bear-message" id="fullscreenBearMessage"></div>
                     
                     <div class="fullscreen-completion-controls" id="fullscreenCompletionControls">
                         <button id="fullscreenStartBreakBtn">休憩開始 (5分)</button>
@@ -1979,7 +2095,16 @@
                 this.fullscreenResetBtn = document.getElementById('fullscreenResetBtn');
                 this.fullscreenStartBreakBtn = document.getElementById('fullscreenStartBreakBtn');
                 this.fullscreenSkipBreakBtn = document.getElementById('fullscreenSkipBreakBtn');
-                this.fullscreenEncouragement = document.getElementById('fullscreenEncouragement');
+                
+                // Polar bear runner elements
+                this.polarBearRunner = document.getElementById('polarBearRunner');
+                this.fullscreenPolarBearRunner = document.getElementById('fullscreenPolarBearRunner');
+                
+                // Fullscreen task title
+                this.fullscreenTaskTitle = document.getElementById('fullscreenTaskTitle');
+                
+                // Fullscreen bear message
+                this.fullscreenBearMessage = document.getElementById('fullscreenBearMessage');
                 
                 this.createEncouragementElement();
                 this.initializeEventListeners();
@@ -2178,9 +2303,20 @@
                     this.progressCircle.classList.remove('progress-ring-active');
                 }
                 
+                // Update polar bear runner
+                if (this.isRunning && !this.isBreakMode) {
+                    this.polarBearRunner.classList.add('running');
+                    // Set animation duration to match total timer duration
+                    const totalDuration = this.isBreakMode ? this.breakDuration : this.workDuration;
+                    const animationDuration = totalDuration; // Complete one revolution over entire timer duration
+                    this.polarBearRunner.style.animationDuration = `${animationDuration}s`;
+                } else {
+                    this.polarBearRunner.classList.remove('running');
+                }
+                
                 // Update fullscreen progress circle
                 if (this.fullscreenProgressCircle) {
-                    const fullscreenCircumference = 2 * Math.PI * 110; // r = 110
+                    const fullscreenCircumference = 2 * Math.PI * 130; // r = 130
                     const fullscreenOffset = fullscreenCircumference - (progress * fullscreenCircumference);
                     this.fullscreenProgressCircle.style.strokeDashoffset = fullscreenOffset;
                     
@@ -2188,6 +2324,16 @@
                         this.fullscreenProgressCircle.classList.add('fullscreen-progress-ring-active');
                     } else {
                         this.fullscreenProgressCircle.classList.remove('fullscreen-progress-ring-active');
+                    }
+                    
+                    // Update fullscreen polar bear runner
+                    if (this.isRunning && !this.isBreakMode) {
+                        this.fullscreenPolarBearRunner.classList.add('running');
+                        const totalDuration = this.isBreakMode ? this.breakDuration : this.workDuration;
+                        const animationDuration = totalDuration;
+                        this.fullscreenPolarBearRunner.style.animationDuration = `${animationDuration}s`;
+                    } else {
+                        this.fullscreenPolarBearRunner.classList.remove('running');
                     }
                 }
             }
@@ -2292,10 +2438,10 @@
                 this.encouragementEl.textContent = message;
                 this.encouragementEl.classList.add('show');
                 
-                // Show in fullscreen too
-                if (this.fullscreenEncouragement) {
-                    this.fullscreenEncouragement.textContent = message;
-                    this.fullscreenEncouragement.classList.add('show');
+                // Show in fullscreen bear message area
+                if (this.fullscreenBearMessage) {
+                    this.fullscreenBearMessage.textContent = message;
+                    this.fullscreenBearMessage.classList.add('show');
                 }
             }
 
@@ -2324,10 +2470,10 @@
                 this.encouragementEl.textContent = message;
                 this.encouragementEl.classList.add('show');
                 
-                // Show in fullscreen too
-                if (this.fullscreenEncouragement) {
-                    this.fullscreenEncouragement.textContent = message;
-                    this.fullscreenEncouragement.classList.add('show');
+                // Show in fullscreen bear message area
+                if (this.fullscreenBearMessage) {
+                    this.fullscreenBearMessage.textContent = message;
+                    this.fullscreenBearMessage.classList.add('show');
                 }
             }
 
@@ -2348,18 +2494,35 @@
                 if (this.encouragementEl) {
                     this.encouragementEl.classList.remove('show');
                 }
-                if (this.fullscreenEncouragement) {
-                    this.fullscreenEncouragement.classList.remove('show');
+                if (this.fullscreenBearMessage) {
+                    this.fullscreenBearMessage.classList.remove('show');
                 }
             }
 
             openFullscreen() {
                 this.syncToFullscreen();
                 this.fullscreenOverlay.classList.add('show');
+                
+                // Sync bear message from main screen
+                if (this.fullscreenBearMessage && this.encouragementEl) {
+                    if (this.encouragementEl.classList.contains('show')) {
+                        // Copy current message from main screen
+                        this.fullscreenBearMessage.textContent = this.encouragementEl.textContent;
+                        this.fullscreenBearMessage.classList.add('show');
+                    } else {
+                        // Show welcome message if no current message
+                        this.fullscreenBearMessage.textContent = 'フルスクリーンでがんばるのじゃ🐻‍❄️';
+                        this.fullscreenBearMessage.classList.add('show');
+                    }
+                }
             }
             
             closeFullscreen() {
                 this.fullscreenOverlay.classList.remove('show');
+                // Hide bear message when closing fullscreen
+                if (this.fullscreenBearMessage) {
+                    this.fullscreenBearMessage.classList.remove('show');
+                }
             }
             
             syncToFullscreen() {
@@ -2369,6 +2532,28 @@
                 this.syncButtonStates();
                 this.syncStatus();
                 this.syncCompletionControls();
+                this.updateFullscreenTaskTitle();
+            }
+
+            updateFullscreenTaskTitle() {
+                if (!this.fullscreenTaskTitle) return;
+                
+                // Get current active task from taskManager
+                if (window.taskManager && window.taskManager.tasks) {
+                    const today = window.taskManager.getCurrentDate();
+                    const todayTasks = window.taskManager.tasks.filter(task => 
+                        task.date === today && !task.completed
+                    );
+                    
+                    if (todayTasks.length > 0) {
+                        const currentTask = todayTasks[0]; // Get the first (top) active task for today
+                        this.fullscreenTaskTitle.textContent = currentTask.text;
+                    } else {
+                        this.fullscreenTaskTitle.textContent = 'タスク実行中…';
+                    }
+                } else {
+                    this.fullscreenTaskTitle.textContent = 'タスク実行中…';
+                }
             }
             
             syncButtonStates() {
@@ -2537,9 +2722,12 @@
             }
 
             deleteTask(taskId) {
-                this.tasks = this.tasks.filter(t => t.id !== taskId);
-                this.saveTasks();
-                this.renderTasks();
+                const task = this.tasks.find(t => t.id === taskId);
+                if (task && !task.completed) {
+                    this.tasks = this.tasks.filter(t => t.id !== taskId);
+                    this.saveTasks();
+                    this.renderTasks();
+                }
             }
 
             renderTasks() {
@@ -2565,6 +2753,11 @@
                         this.taskList.appendChild(taskEl);
                     });
                 });
+                
+                // Notify fullscreen timer to update task title
+                if (window.pomodoroTimer && window.pomodoroTimer.updateFullscreenTaskTitle) {
+                    window.pomodoroTimer.updateFullscreenTaskTitle();
+                }
             }
 
             groupTasksByDate() {
@@ -2581,18 +2774,22 @@
             createTaskElement(task) {
                 const taskEl = document.createElement('div');
                 taskEl.className = `task-item ${task.completed ? 'completed' : ''}`;
-                taskEl.draggable = true;
+                taskEl.draggable = !task.completed;
                 taskEl.dataset.taskId = task.id;
                 
                 const subtaskCount = task.subtasks ? task.subtasks.length : 0;
                 const completedSubtasks = task.subtasks ? task.subtasks.filter(st => st.completed).length : 0;
                 const progressIndicator = subtaskCount > 0 ? `<span class="task-progress-indicator">(${completedSubtasks}/${subtaskCount})</span>` : '';
                 
+                const actionButton = task.completed 
+                    ? `<div class="task-completed-mark">✓</div>`
+                    : `<button class="task-delete" data-task-id="${task.id}">×</button>`;
+                
                 taskEl.innerHTML = `
                     <div class="drag-handle">⋮⋮</div>
                     <div class="task-checkbox ${task.completed ? 'checked' : ''}" data-task-id="${task.id}"></div>
                     <div class="task-text">${this.escapeHtml(task.text)}${progressIndicator}</div>
-                    <button class="task-delete" data-task-id="${task.id}">×</button>
+                    ${actionButton}
                 `;
                 
                 const checkbox = taskEl.querySelector('.task-checkbox');
@@ -2603,16 +2800,19 @@
                     this.toggleTask(task.id);
                 });
                 
-                deleteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.deleteTask(task.id);
-                });
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.deleteTask(task.id);
+                    });
+                }
                 
                 // Task card click event for opening dialog
                 taskEl.addEventListener('click', (e) => {
                     if (!e.target.classList.contains('task-checkbox') && 
                         !e.target.classList.contains('task-delete') && 
-                        !e.target.classList.contains('drag-handle')) {
+                        !e.target.classList.contains('drag-handle') &&
+                        !e.target.classList.contains('task-completed-mark')) {
                         this.openTaskDialog(task.id);
                     }
                 });
