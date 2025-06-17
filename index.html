@@ -2034,6 +2034,18 @@
                         '気合を入れていこうかの🐻‍❄️',
                         '新たなチャレンジの時間じゃ🐻‍❄️'
                     ],
+                    break: [
+                        'おつかれさまなのじゃ🐻‍❄️',
+                        'ゆっくり休むのじゃよ🐻‍❄️',
+                        'リラックスタイムじゃの🐻‍❄️',
+                        'お茶でも飲んでくつろぐのじゃ🐻‍❄️',
+                        '深呼吸して心を落ち着けるのじゃ🐻‍❄️',
+                        'よくがんばったのう、休憩じゃ🐻‍❄️',
+                        'のんびりした時間を過ごすのじゃ🐻‍❄️',
+                        '心も体もリフレッシュするのじゃ🐻‍❄️',
+                        'ほっと一息つくのじゃよ🐻‍❄️',
+                        '癒しの時間を大切にするのじゃ🐻‍❄️'
+                    ],
                     middle: [
                         'がんばっているの🐻‍❄️',
                         'いい調子じゃ🐻‍❄️',
@@ -2384,6 +2396,10 @@
                 this.updateDisplay();
                 this.updateProgress();
                 this.updateModeIndicator();
+                
+                // 休憩開始時のメッセージ表示
+                this.showBreakEncouragement();
+                
                 this.start();
             }
 
@@ -2487,8 +2503,12 @@
 
             startEncouragementMessages() {
                 this.encouragementIntervalId = setInterval(() => {
-                    if (this.isRunning && !this.isBreakMode) {
-                        this.showContextualEncouragement();
+                    if (this.isRunning) {
+                        if (this.isBreakMode) {
+                            this.showBreakEncouragement();
+                        } else {
+                            this.showContextualEncouragement();
+                        }
                     }
                 }, 1 * 60 * 1000); // 1分間隔
             }
@@ -2504,6 +2524,21 @@
             showContextualEncouragement() {
                 const phase = this.getCurrentPhase();
                 const messages = this.encouragementMessages[phase];
+                const randomIndex = Math.floor(Math.random() * messages.length);
+                const message = messages[randomIndex];
+                
+                this.encouragementEl.textContent = message;
+                this.encouragementEl.classList.add('show');
+                
+                // Show in fullscreen bear message area
+                if (this.fullscreenBearMessage) {
+                    this.fullscreenBearMessage.textContent = message;
+                    this.fullscreenBearMessage.classList.add('show');
+                }
+            }
+
+            showBreakEncouragement() {
+                const messages = this.encouragementMessages.break;
                 const randomIndex = Math.floor(Math.random() * messages.length);
                 const message = messages[randomIndex];
                 
@@ -2627,6 +2662,11 @@
                 const message = this.isBreakMode ? 
                     `${this.settings.breakDuration}分間の休憩が完了しました！次のポモドーロを始めましょう！` : 
                     `${this.settings.workDuration}分間の作業が完了しました！お疲れ様でした！`;
+                
+                // スマホ版: バイブレーション
+                if (navigator.vibrate) {
+                    navigator.vibrate(200); // 200ミリ秒のバイブレーション
+                }
                 
                 // ブラウザ通知
                 if (Notification.permission === 'granted') {
