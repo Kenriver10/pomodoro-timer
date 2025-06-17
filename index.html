@@ -1792,13 +1792,13 @@
         }
 
         @keyframes bearRun {
-            0% { transform: translate(-50%, -50%) rotate(0deg) translateX(80px) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg) translateX(80px) rotate(-360deg); }
+            0% { transform: translate(-50%, -50%) rotate(-90deg) translateX(80px) rotate(90deg); }
+            100% { transform: translate(-50%, -50%) rotate(270deg) translateX(80px) rotate(-270deg); }
         }
 
         @keyframes fullscreenBearRun {
-            0% { transform: translate(-50%, -50%) rotate(0deg) translateX(130px) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg) translateX(130px) rotate(-360deg); }
+            0% { transform: translate(-50%, -50%) rotate(-90deg) translateX(130px) rotate(90deg); }
+            100% { transform: translate(-50%, -50%) rotate(270deg) translateX(130px) rotate(-270deg); }
         }
     </style>
 </head>
@@ -2153,19 +2153,39 @@
                     this.syncStatus();
                     this.syncCompletionControls();
                     
+                    // スタート時刻を記録してスリープ復帰対応
+                    this.startTime = Date.now();
+                    this.lastTickTime = this.startTime;
+                    
                     if (!this.isBreakMode) {
                         this.showInitialEncouragement();
                         this.startEncouragementMessages();
                     }
                     
                     this.intervalId = setInterval(() => {
-                        this.timeLeft--;
+                        const now = Date.now();
+                        const expectedElapsed = Math.floor((now - this.startTime) / 1000);
+                        const totalDuration = this.isBreakMode ? this.breakDuration : this.workDuration;
+                        const correctTimeLeft = Math.max(0, totalDuration - expectedElapsed);
+                        
+                        // スリープ復帰時の大きな時間差を検出（2秒以上のずれ）
+                        if (Math.abs(this.timeLeft - correctTimeLeft) > 2) {
+                            this.timeLeft = correctTimeLeft;
+                        } else {
+                            this.timeLeft--;
+                        }
+                        
                         this.updateDisplay();
                         this.updateProgress();
                         
                         if (this.timeLeft <= 0) {
+                            // 即座にintervalをクリアして重複実行を防ぐ
+                            clearInterval(this.intervalId);
+                            this.intervalId = null;
                             this.complete();
                         }
+                        
+                        this.lastTickTime = now;
                     }, 1000);
                 }
             }
@@ -2179,7 +2199,10 @@
                     this.syncButtonStates();
                     this.syncStatus();
                     
-                    clearInterval(this.intervalId);
+                    if (this.intervalId) {
+                        clearInterval(this.intervalId);
+                        this.intervalId = null;
+                    }
                     this.stopEncouragementMessages();
                 }
             }
@@ -2192,7 +2215,10 @@
                 this.startBtn.disabled = false;
                 this.pauseBtn.disabled = true;
                 
-                clearInterval(this.intervalId);
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
                 this.stopEncouragementMessages();
                 this.hideCompletionControls();
                 this.updateDisplay();
@@ -2208,12 +2234,21 @@
                 this.startBtn.disabled = false;
                 this.pauseBtn.disabled = true;
                 
-                clearInterval(this.intervalId);
+                // intervalを確実にクリア
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
                 this.stopEncouragementMessages();
                 
                 // 完了時エフェクト
                 this.playCompletionEffect();
                 this.playNotification();
+                
+                // 完了時は必ず0にセット
+                this.timeLeft = 0;
+                this.updateDisplay();
+                this.updateProgress();
                 
                 if (this.isBreakMode) {
                     this.status.textContent = '🎉 休憩完了！次のポモドーロを始めましょう！';
@@ -2290,7 +2325,9 @@
 
             updateProgress() {
                 const totalDuration = this.isBreakMode ? this.breakDuration : this.workDuration;
-                const progress = (totalDuration - this.timeLeft) / totalDuration;
+                // timeLeftが負の値にならないよう制限
+                const safeTimeLeft = Math.max(0, this.timeLeft);
+                const progress = Math.min(1, (totalDuration - safeTimeLeft) / totalDuration);
                 
                 // Update main progress circle
                 const circumference = 2 * Math.PI * 80; // r = 80
@@ -2303,15 +2340,16 @@
                     this.progressCircle.classList.remove('progress-ring-active');
                 }
                 
-                // Update polar bear runner
+                // Update polar bear runner - プログレスと同期
                 if (this.isRunning && !this.isBreakMode) {
-                    this.polarBearRunner.classList.add('running');
-                    // Set animation duration to match total timer duration
-                    const totalDuration = this.isBreakMode ? this.breakDuration : this.workDuration;
-                    const animationDuration = totalDuration; // Complete one revolution over entire timer duration
-                    this.polarBearRunner.style.animationDuration = `${animationDuration}s`;
+                    this.polarBearRunner.classList.remove('running');
+                    // プログレスに合わせて直接位置を計算（0度（3時）から開始）
+                    const rotationAngle = progress * 360;
+                    this.polarBearRunner.style.transform = `translate(-50%, -50%) rotate(${rotationAngle}deg) translateX(80px) rotate(-${rotationAngle}deg)`;
+                    this.polarBearRunner.style.opacity = '1';
                 } else {
                     this.polarBearRunner.classList.remove('running');
+                    this.polarBearRunner.style.opacity = '0';
                 }
                 
                 // Update fullscreen progress circle
@@ -2326,14 +2364,16 @@
                         this.fullscreenProgressCircle.classList.remove('fullscreen-progress-ring-active');
                     }
                     
-                    // Update fullscreen polar bear runner
+                    // Update fullscreen polar bear runner - プログレスと同期
                     if (this.isRunning && !this.isBreakMode) {
-                        this.fullscreenPolarBearRunner.classList.add('running');
-                        const totalDuration = this.isBreakMode ? this.breakDuration : this.workDuration;
-                        const animationDuration = totalDuration;
-                        this.fullscreenPolarBearRunner.style.animationDuration = `${animationDuration}s`;
+                        this.fullscreenPolarBearRunner.classList.remove('running');
+                        // プログレスに合わせて直接位置を計算（0度（3時）から開始）
+                        const rotationAngle = progress * 360;
+                        this.fullscreenPolarBearRunner.style.transform = `translate(-50%, -50%) rotate(${rotationAngle}deg) translateX(130px) rotate(-${rotationAngle}deg)`;
+                        this.fullscreenPolarBearRunner.style.opacity = '1';
                     } else {
                         this.fullscreenPolarBearRunner.classList.remove('running');
+                        this.fullscreenPolarBearRunner.style.opacity = '0';
                     }
                 }
             }
