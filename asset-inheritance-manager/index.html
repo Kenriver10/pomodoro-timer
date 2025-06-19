@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>資産管理・相続システム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #f8f9fa;
+            padding: 30px 20px;
+            border-right: 1px solid #e9ecef;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 15px 20px;
+            margin: 10px 0;
+            text-decoration: none;
+            color: #2c3e50;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .content {
+            flex: 1;
+            padding: 30px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+
+        .form-group {
+            margin: 20px 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-success {
+            background: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .asset-list {
+            margin-top: 30px;
+        }
+
+        .asset-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .asset-info {
+            flex: 1;
+        }
+
+        .asset-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .asset-details {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .asset-value {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #27ae60;
+        }
+
+        .prediction-chart {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .total-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #27ae60;
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-active {
+            background: #27ae60;
+        }
+
+        .status-inactive {
+            background: #e74c3c;
+        }
+
+        .emergency-contact {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .asset-adjustment-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .adjustment-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .arrow-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .arrow-btn:hover {
+            background: #c0392b;
+            transform: scale(1.1);
+        }
+
+        .arrow-btn.increase {
+            background: #27ae60;
+        }
+
+        .arrow-btn.increase:hover {
+            background: #229954;
+        }
+
+        .amount-display {
+            font-weight: 600;
+            color: #2c3e50;
+            min-width: 120px;
+            text-align: center;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+
+        .editable-amount {
+            background: white;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            padding: 8px 12px;
+            font-weight: 600;
+            color: #2c3e50;
+            min-width: 120px;
+            text-align: center;
+            outline: none;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .header p {
+                font-size: 1em;
+            }
+            
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 20px 10px;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            .nav-item {
+                display: inline-block;
+                margin: 5px;
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+                font-size: 0.9em;
+                padding: 12px 15px;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .card {
+                padding: 20px 15px;
+                margin: 15px 0;
+            }
+            
+            .form-group {
+                margin: 15px 0;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 15px 12px;
+                font-size: 16px;
+            }
+            
+            .btn {
+                padding: 15px 20px;
+                font-size: 16px;
+                margin: 10px 5px;
+                min-width: 120px;
+            }
+            
+            .asset-item {
+                flex-direction: column;
+                text-align: left;
+                gap: 10px;
+            }
+            
+            .asset-value {
+                text-align: left;
+                margin-top: 10px;
+            }
+            
+            .total-value {
+                font-size: 1.5em;
+                padding: 15px;
+            }
+            
+            .prediction-chart {
+                padding: 15px;
+            }
+            
+            .notification {
+                right: 10px !important;
+                top: 10px !important;
+                left: 10px !important;
+                max-width: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐻‍❄️ 資産管理・相続システム</h1>
+            <p>将来の資産予測と安全な相続管理　しろくまがお手伝いするの🐻‍❄️</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <a href="#" class="nav-item active" onclick="showSection('dashboard', this)">ダッシュボード</a>
+                <a href="#" class="nav-item" onclick="showSection('assets', this)">資産管理</a>
+                <a href="#" class="nav-item" onclick="showSection('prediction', this)">将来予測</a>
+                <a href="#" class="nav-item" onclick="showSection('inheritance', this)">相続管理</a>
+                <a href="#" class="nav-item" onclick="showSection('settings', this)">設定</a>
+            </div>
+
+            <div class="content">
+                <!-- ダッシュボード -->
+                <div id="dashboard" class="section active">
+                    <h2>ダッシュボード</h2>
+                    <div class="total-value" id="totalValue">¥0</div>
+                    
+                    <!-- 月次更新管理 -->
+                    <div class="card">
+                        <h3>📅 月次更新管理</h3>
+                        <div style="margin-bottom: 15px;">
+                            <span style="font-weight: 600;">最終更新日: </span>
+                            <span id="lastUpdateDate">未設定</span>
+                            <div style="margin-top: 10px;">
+                                <button class="btn btn-success" onclick="performMonthlyUpdate()">💰 積立額を追加</button>
+                                <button class="btn btn-danger" onclick="undoMonthlyUpdate()" style="margin-left: 10px;" id="undoButton" disabled>↩️ 追加分を戻す</button>
+                                <button class="btn" onclick="resetAllAssets()" style="margin-left: 10px; background: #e67e22; color: white;">🔄 全資産リセット</button>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <small style="color: #7f8c8d;">「積立額を追加」で月額投資分を現在額に加算。「追加分を戻す」で取り消し可能。「全資産リセット」で全ての現在額・積立額を初期値に戻します。</small>
+                        </div>
+                    </div>
+
+                    <!-- 資産金額調整 -->
+                    <div class="card" id="assetAdjustmentPanel" style="display: none;">
+                        <h3>💰 資産金額・積立額調整</h3>
+                        <div id="assetAdjustmentList">
+                            <!-- 調整可能な資産リストがここに表示されます -->
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>資産概要</h3>
+                        <div id="assetSummary">
+                            <p>まだ資産が登録されていません。</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>相続管理ステータス</h3>
+                        <div id="inheritanceStatus">
+                            <span class="status-indicator status-inactive"></span>
+                            <span>相続機能：未設定</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 資産管理 -->
+                <div id="assets" class="section">
+                    <h2>資産管理</h2>
+                    
+                    <div class="card">
+                        <h3>新しい資産を追加</h3>
+                        <form id="assetForm">
+                            <div class="form-group">
+                                <label>資産種別</label>
+                                <select id="assetType" required onchange="updateAssetName(); toggleForexFields();">
+                                    <option value="">選択してください</option>
+                                    <option value="NISA">NISA</option>
+                                    <option value="仮想通貨">仮想通貨</option>
+                                    <option value="預貯金">預貯金</option>
+                                    <option value="年金保険">年金保険</option>
+                                    <option value="財形貯蓄">財形貯蓄</option>
+                                    <option value="貯蓄型保険">貯蓄型保険</option>
+                                    <option value="外国為替">外国為替</option>
+                                    <option value="投資信託">投資信託</option>
+                                    <option value="株式投資">株式投資</option>
+                                    <option value="債券">債券</option>
+                                    <option value="その他">その他</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>資産名（オプション）</label>
+                                <input type="text" id="assetName" placeholder="未入力の場合は自動生成されます">
+                            </div>
+                            
+                            <!-- 通常資産用の通貨選択 -->
+                            <div class="form-group" id="normalCurrencyGroup">
+                                <label>通貨</label>
+                                <select id="currency" required>
+                                    <option value="JPY">日本円 (JPY)</option>
+                                    <option value="USD">米ドル (USD)</option>
+                                    <option value="AUD">豪ドル (AUD)</option>
+                                    <option value="EUR">ユーロ (EUR)</option>
+                                </select>
+                            </div>
+                            
+                            <!-- 外国為替専用フィールド -->
+                            <div id="forexFields" style="display: none;">
+                                <div class="form-group">
+                                    <label style="color: #e74c3c; font-weight: bold;">🌍 外国為替設定</label>
+                                    <p style="font-size: 0.9em; color: #7f8c8d; margin: 5px 0 15px 0;">
+                                        円建てで積立を行い、外貨建て資産として運用する設定です
+                                    </p>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>投資対象通貨</label>
+                                    <select id="forexTargetCurrency" required>
+                                        <option value="USD">米ドル (USD)</option>
+                                        <option value="AUD">豪ドル (AUD)</option>
+                                        <option value="EUR">ユーロ (EUR)</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>積立通貨</label>
+                                    <select id="forexBaseCurrency" required>
+                                        <option value="JPY" selected>日本円 (JPY)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>現在の金額</label>
+                                <input type="number" id="currentAmount" step="0.01" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>月額投資額（0の場合は積立なし）</label>
+                                <input type="number" id="monthlyContribution" step="0.01" value="0" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>年間利回り (%)</label>
+                                <input type="number" id="annualReturn" step="0.01" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>課税区分</label>
+                                <select id="taxCategory" required>
+                                    <option value="">選択してください</option>
+                                    <option value="非課税">非課税（NISA・つみたてNISA等）</option>
+                                    <option value="総合">総合課税（預貯金利息・債券等）</option>
+                                    <option value="雑所得">雑所得（仮想通貨・外国為替等）</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>将来価格予測（手動入力、オプション）</label>
+                                <input type="number" id="futurePrice" step="0.01" placeholder="自動計算を使用する場合は空白">
+                            </div>
+                            
+                            <!-- 相続管理用アクセス情報 -->
+                            <div class="card" style="background: #f8f9fa; margin: 20px 0;">
+                                <h4 style="color: #e74c3c; margin-bottom: 15px;">🔐 相続管理用アクセス情報（オプション）</h4>
+                                <p style="font-size: 0.9em; color: #7f8c8d; margin-bottom: 15px;">
+                                    相続時に必要となるアクセス情報を安全に保存できます
+                                </p>
+                                
+                                <div class="form-group">
+                                    <label>取り扱い先・機関名</label>
+                                    <input type="text" id="institutionName" placeholder="例: 楽天証券、みずほ銀行、coincheck">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>連絡先・サイトURL</label>
+                                    <input type="text" id="contactInfo" placeholder="例: https://www.rakuten-sec.co.jp/, 0120-XXX-XXX">
+                                </div>
+                                
+                                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label>ログインID・ユーザー名</label>
+                                        <input type="text" id="loginId" placeholder="ログインID">
+                                    </div>
+                                    
+                                    <div class="form-group" style="flex: 1; min-width: 200px;">
+                                        <label>パスワード</label>
+                                        <input type="password" id="password" placeholder="パスワード">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>二段階認証</label>
+                                    <select id="twoFactorAuth">
+                                        <option value="">なし</option>
+                                        <option value="SMS">SMS認証</option>
+                                        <option value="アプリ">認証アプリ（Google Authenticator等）</option>
+                                        <option value="メール">メール認証</option>
+                                        <option value="ハードウェア">ハードウェアキー</option>
+                                        <option value="その他">その他</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>備考・注意事項</label>
+                                    <textarea id="accessNotes" rows="3" placeholder="特別な手続きや注意事項があれば記入"></textarea>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn">資産を追加</button>
+                        </form>
+                    </div>
+
+                    <div class="asset-list" id="assetList">
+                        <!-- 資産リストがここに表示されます -->
+                    </div>
+                </div>
+
+                <!-- 将来予測 -->
+                <div id="prediction" class="section">
+                    <h2>将来予測</h2>
+                    
+                    <div class="card">
+                        <h3>予測期間設定</h3>
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <div class="form-group" style="flex: 1; min-width: 200px;">
+                                <label>予測年数</label>
+                                <select id="predictionYears" onchange="if(window.assetManager) window.assetManager.updatePrediction()">
+                                    <option value="1">1年</option>
+                                    <option value="2">2年</option>
+                                    <option value="3">3年</option>
+                                    <option value="5">5年</option>
+                                    <option value="7">7年</option>
+                                    <option value="10" selected>10年</option>
+                                    <option value="12">12年</option>
+                                    <option value="15">15年</option>
+                                    <option value="18">18年</option>
+                                    <option value="20">20年</option>
+                                    <option value="25">25年</option>
+                                    <option value="30">30年</option>
+                                    <option value="35">35年</option>
+                                    <option value="40">40年</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group" style="flex: 1; min-width: 200px;">
+                                <label>表示モード</label>
+                                <select id="displayMode" onchange="if(window.assetManager) window.assetManager.updatePrediction()">
+                                    <option value="both">純粋成長 ＋ 課税後成長</option>
+                                    <option value="gross">純粋成長のみ</option>
+                                    <option value="net">課税後成長のみ</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="prediction-chart" id="predictionChart">
+                        <h3>予測結果</h3>
+                        <div id="predictionResult">
+                            予測を表示するには資産を追加してください。
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>成長グラフ</h3>
+                        <canvas id="growthChart" width="800" height="400" style="max-width: 100%; height: auto; background: #f8f9fa; border-radius: 8px;"></canvas>
+                    </div>
+                </div>
+
+                <!-- 相続管理 -->
+                <div id="inheritance" class="section">
+                    <h2>相続管理</h2>
+                    
+                    <div class="card">
+                        <h3>緊急連絡先設定</h3>
+                        <form id="inheritanceForm">
+                            <div class="form-group">
+                                <label>連絡先メールアドレス</label>
+                                <input type="email" id="emergencyEmail" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>無連絡期間 (日数)</label>
+                                <input type="number" id="inactivityDays" value="30" min="1" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>相続メッセージ</label>
+                                <textarea id="inheritanceMessage" rows="5" placeholder="相続時に送信されるメッセージを入力してください..."></textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn">設定を保存</button>
+                        </form>
+                    </div>
+
+                    <div class="emergency-contact" id="emergencyContactInfo" style="display: none;">
+                        <h4>現在の設定</h4>
+                        <div id="currentSettings"></div>
+                        <p><strong>最終確認日:</strong> <span id="lastCheckIn"></span></p>
+                        <button class="btn btn-success" onclick="checkIn()">生存確認</button>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>📋 相続レポート</h3>
+                        <p>すべての資産情報とアクセス情報を含む相続用レポートを生成できます。</p>
+                        <button class="btn" onclick="if(window.assetManager) window.assetManager.generateInheritanceReport()">相続レポート生成</button>
+                    </div>
+                </div>
+
+                <!-- 設定 -->
+                <div id="settings" class="section">
+                    <h2>設定</h2>
+                    
+                    <div class="card">
+                        <h3>為替レート更新</h3>
+                        <p>現在の為替レート (対JPY):</p>
+                        <div id="exchangeRates">
+                            <p>USD: <span id="usdRate">150.00</span></p>
+                            <p>AUD: <span id="audRate">100.00</span></p>
+                            <p>EUR: <span id="eurRate">160.00</span></p>
+                        </div>
+                        <button class="btn" onclick="updateExchangeRates()">レート更新</button>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>データ管理</h3>
+                        <button class="btn btn-success" onclick="exportData()">データエクスポート</button>
+                        <button class="btn btn-danger" onclick="clearAllData()">全データ削除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
